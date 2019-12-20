@@ -2,6 +2,9 @@
 """
 This module contains utility functions for coordinate conversions.
 """
+__author__ = "Alexander Dietz"
+__license__ = "MIT"
+# pylint: disable=C0103
 
 import math
 
@@ -32,7 +35,7 @@ def chunk_to_block(x, z):
     max_z = CHUNK_SIZE * (z + 1) -1
     return ((min_x, max_x), (min_z, max_z))
 
-def region_to_block(x,z):
+def region_to_block(x, z):
     """Returns min/max block coordinates given region coordinates."""
     min_x = REGION_SIZE * x
     min_z = REGION_SIZE * z
@@ -40,13 +43,13 @@ def region_to_block(x,z):
     max_z = REGION_SIZE * (z + 1) -1
     return ((min_x, max_x), (min_z, max_z))
 
-def chunk_to_region(x,z):
+def chunk_to_region(x, z):
     """Returns region coordinates given chunk coordinates."""
     region_x = int(math.floor(x * CHUNK_SIZE / REGION_SIZE))
     region_z = int(math.floor(z * CHUNK_SIZE / REGION_SIZE))
     return (region_x, region_z)
 
-def block_to_region(x,z):
+def block_to_region(x, z):
     """Returns region coordinates given block coordinates."""
     region_x = int(math.floor(x / REGION_SIZE))
     region_z = int(math.floor(z / REGION_SIZE))

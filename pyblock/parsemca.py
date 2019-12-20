@@ -4,17 +4,19 @@ This package parses mca files.
 
 The structure is expained here: https://minecraft.gamepedia.com/Region_file_format
 """
+__author__ = "Alexander Dietz"
+__license__ = "MIT"
 
 import sys
 import zlib
 from pathlib import Path
 
-from nbt import nbt
-
 from pyblock.chunk import Chunk
 
 
-class MCA(object):
+class MCA():
+    """Parser for MCA files.
+    """
 
     LEN_LOCATION = 4
     LEN_TIMESTAMP = 4
@@ -22,7 +24,7 @@ class MCA(object):
 
     def __init__(self, filename, chunk_list, area, verbose):
         """Initialize this parser object.
-        
+
         Args:
             filename (string): name of the mca file to parse
             chunk_list (list): list of chunks to analyze.
@@ -37,7 +39,7 @@ class MCA(object):
 
         # area to analyze
         self.area = area
-        
+
         # verbosity
         self.verbose = verbose
 
@@ -58,7 +60,7 @@ class MCA(object):
 
         See https://minecraft.gamepedia.com/Region_file_format
         """
-        if self.verbose>0:
+        if self.verbose > 0:
             print("  Extracting locations ...")
         for location_number in range(1024):
             index = self.LEN_LOCATION * location_number
@@ -73,7 +75,7 @@ class MCA(object):
 
         See https://minecraft.gamepedia.com/Region_file_format
         """
-        if self.verbose>0:
+        if self.verbose > 0:
             print("  Extracting timestamps ...")
         for timestamp_number in range(1024):
             index = self.CHUNK_LENGTH + self.LEN_TIMESTAMP * timestamp_number
@@ -86,20 +88,19 @@ class MCA(object):
 
         See https://minecraft.gamepedia.com/Region_file_format
         """
-        if self.verbose>0:         
-          print("  Extracting chunks ...")
+        if self.verbose > 0:
+            print("  Extracting chunks ...")
         number_chunks = len(self.chunks.keys())
         counter = 0
         chunks_to_remove = []
         for number, chunk in self.chunks.items():
             counter += 1
-            if self.verbose>0:
+            if self.verbose > 0:
                 sys.stdout.write(f"\r    Extracting chunk {counter}/{number_chunks}")
                 sys.stdout.flush()
 
             index = self.CHUNK_LENGTH * chunk.offset
             length = self.int(index, index+4)
-            ctype =  self.data[index+4]
 
             # compute indices
             i_begin = index+5
@@ -117,8 +118,8 @@ class MCA(object):
                     chunks_to_remove.append(number)
 
         # Remove chunks not used
-        if self.verbose>0:
-           print(f"  Ignoring {len(chunks_to_remove)} chunks.")
+        if self.verbose > 0:
+            print(f"  Ignoring {len(chunks_to_remove)} chunks.")
         for number in chunks_to_remove:
             del self.chunks[number]
 
@@ -133,11 +134,11 @@ class MCA(object):
         """
         blocks = {}
         for number, chunk in self.chunks.items():
-            if self.verbose>1:
+            if self.verbose > 1:
                 sys.stdout.write(f"\r    Analyzing chunk {number}")
                 sys.stdout.flush()
-            b = chunk.get_blocks()
-            for key, locs in b.items():
+            chunk_blocks = chunk.get_blocks()
+            for key, locs in chunk_blocks.items():
                 value = len(locs)
                 if key in blocks:
                     blocks[key] += value
@@ -150,11 +151,11 @@ class MCA(object):
         """
         locations = []
         for number, chunk in self.chunks.items():
-            if self.verbose>1:
+            if self.verbose > 1:
                 sys.stdout.write(f"\r    Analyzing chunk {number}")
                 sys.stdout.flush()
             blocks = chunk.get_blocks()
-            if block_name in blocks:                
+            if block_name in blocks:
                 locations.extend(blocks[block_name])
         return locations
     

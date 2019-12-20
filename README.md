@@ -17,6 +17,13 @@ as the region size, the region a block belongs to is
 
 ![block region](doc/images/Tex2Img_1575490739.jpg)
 
+where the brackets denote the `floor` funtion, which returns the closest integer value which is less than or equal to the specified expression or value.
+
+Examples:
+
+![block region](doc/images/floorexample.jpg)
+
+
 In the other way around you might ask the range of a region in block coordinates, then you can calculate it via
 
 ![block chunk](doc/images/Tex2Img_1575489552.jpg)
@@ -25,25 +32,23 @@ In the other way around you might ask the range of a region in block coordinates
 
 Each region is further divided into chunks, which are 16x16 blocks. So when we define 
 
-s<sub>c</sub>=16 as the chunk size, then the chunk coordinates a block belongs to is
+s<sub>c</sub>=16
+
+as the chunk size, then the chunk coordinates a block belongs to is
 
 ![block chunk](doc/images/Tex2Img_1575490796.jpg)
 
-and similar
+and similar the range of a chunk in block coordinates is calculated as 
 
 ![block chunk](doc/images/Tex2Img_1575489907.jpg)
 
-------
 
-I refere to this as chunk coordinates.
+## Sections
 
-In the other way around you might ask the range of a region in block coordinates, then you can calculate it via
+Each chunk itself is further divided into 'sections' which represent a 16x16x16 block area. Each chunk has 16 vertical stacked sections.
 
-![block chunk](doc/images/Tex2Img_1575489552.jpg)
+These sections are read with the ![NBT Parser](https://github.com/twoolie/NBT) which handles all the details of how the sections and blocks are stored inside the mca files.
 
-and similar
-
-![block chunk](doc/images/Tex2Img_1575489907.jpg)
 
 ## Usage
 
@@ -51,30 +56,46 @@ This tool can be used in two ways: List all blocks in a certain area or find the
 
 ### Listing all blocks
 
-mycraft.py  --coords 100 40 -400 --radius 40 --list
+`mcblock  --coords 100 40 -400 --radius 40 --list`
 
 This command lists all the blocks found in an cuboid area around the block at coordinates (100,40,-400) within a box-'radius' of 40. The search area is a box with minimal coordinates (60, 0, -440) and maximal coordinates (1400, 80, -360).
 
+You can specify the argument `--vertical` to search the complete vertical column. In the example that would be a box with minimal coordinates (60, 0, -440) and maximal coordinates (1400, 255, -360).
+
 ### Finding a block
 
-mycraft.py  --coords 100 40 -400 --radius 20 --find diamond_ore
+`mcblock --coords 100 40 -400 --radius 20 --find diamond_ore`
 
-This command lists the exact block coordinates of each occurance of the block type that has been found in the specified search area.
+This command lists the exact block coordinates of each occurance of the block type 'diamond_ore' that has been found in the specified search area.
+
+### Analyzing a region
+
+You also can use the tool to analyze a complete region file, e.g.
+
+`mcblock --region -3 5 --list`
+
+### Coordinate conversion
+
+There is a second tool to convert coordinates from block coordinates to region/chunk coordinates:
+
+```
+mccoord  --coords 2500 73 -8500
+Coordinates: x=2500 / y=73 / z=-8500
+Region-file: r.4.-17.mca
+Chunk: x=156 / z=-532
+```
+
+and the other way around:
+
+mccoord  --region 4 -17
+Region-file: r.4.-17.mca
+Coordinate ranges (inclusive): x: 2048-2559  / z: -8704--8193
+```
 
 ## Further information
 
 
-Current specification is on the official [Minecraft Wiki](https://minecraft.gamepedia.com/NBT_format).
+Last update was tested on Minecraft version **1.15.1** with python 3.6.9.
 
 
-Last update was tested on Minecraft version **1.13.4**.
-
-
-## Dependencies
-
-The library, the tests and the examples are only using the Python core library,
-except `curl` for downloading some test reference data and `PIL` (Python
-Imaging Library) for the `map` example.
-
-Supported Python releases: 2.7, 3.4 to 3.7
 

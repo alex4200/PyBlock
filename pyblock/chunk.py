@@ -2,6 +2,10 @@
 """
 This module is a wrapper of the MCA chunk object.
 """
+__author__ = "Alexander Dietz"
+__license__ = "MIT"
+# pylint: disable=C0103
+
 
 from io import BytesIO
 
@@ -9,13 +13,15 @@ from nbt import nbt
 from nbt import chunk as achunk
 
 
-class Chunk(object):
+class Chunk():
+    """Parser with a chunk.
+    """
 
     # See https://minecraft.gamepedia.com/Chunk_format
 
     def __init__(self, offset, area, verbose):
         """Initialize this parser object.
-        
+
         Args:
             offset (int): Specifies the location of this chunk within the MCA data.
             area (list): min/max block coordinates to be analyzed.
@@ -24,7 +30,7 @@ class Chunk(object):
 
         # Offset in the current MCA file
         self.offset = offset
-        
+
         # Search area
         self.area = area
 
@@ -33,6 +39,7 @@ class Chunk(object):
 
         self.data = None
         self.nbt = nbt
+        self.timestamp = None
 
         # The sections containsed in this chunk
         self.sections = []
@@ -45,8 +52,8 @@ class Chunk(object):
     def add_data(self, data):
         """Reads the section data from the NBT file.
         """
-        self.data =  data
-        self.nbt = nbt.NBTFile(buffer = BytesIO(data))
+        self.data = data
+        self.nbt = nbt.NBTFile(buffer=BytesIO(data))
         self.sections = self.nbt.tags[0].get("Sections")
 
     def get_coords(self):
@@ -56,7 +63,7 @@ class Chunk(object):
             int(str(self.nbt.tags[0].get("xPos"))),
             int(str(self.nbt.tags[0].get("zPos")))
             )
-    
+
     def in_area(self, x, y, z):
         """Returns True of the block coordinates are within the seaerch area,
         False otherwise.
@@ -64,22 +71,24 @@ class Chunk(object):
         if not self.area:
             return True
         cmin, cmax = self.area
-        return x>=cmin[0] and x<cmax[0] and y>=cmin[1] and y<cmax[1] and z>=cmin[2] and z<cmax[2] 
+        return x >= cmin[0] and x < cmax[0] and \
+               y >= cmin[1] and y < cmax[1] and \
+               z >= cmin[2] and z < cmax[2]
 
     def get_blocks(self):
         """Returns a dictionary with exact locations for all blocks.
         Only returns blocks that are within 'self.area'.
-        
+
         br = block_range = ((xmin, xmax),(zmin, zmax))
         """
         cx = 16*int(str(self.nbt.tags[0].get('xPos')))
         cz = 16*int(str(self.nbt.tags[0].get('zPos')))
 
         blocks = {}
-        for index, section in enumerate(self.sections[1:]):
+        for section in self.sections[1:]:
             if not 'Palette' in section and not 'Blocks' in section:
-                if self.verbose>2:
-                   print(f"Empty section found, skipping")
+                if self.verbose > 2:
+                    print(f"Empty section found, skipping")
                 continue
             if not section.get('Palette'):
                 section_version = 0
@@ -97,7 +106,7 @@ class Chunk(object):
                         py = cy + y
                         pz = cz + z
                         if self.in_area(px, py, pz):
-                            b = ac.get_block(x,y,z)
+                            b = ac.get_block(x, y, z)
                             if b in blocks:
                                 blocks[b].append((px, py, pz))
                             else:
