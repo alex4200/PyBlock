@@ -15,7 +15,7 @@ setup(
     author_email='alexander.dietz17@gmail.com',
     packages=find_packages(where='.', exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     package_data={}, 
-    scripts=[],
+    scripts=['bin/mccoord', 'bin/mcblock'],
     license=open('LICENSE.txt').read().strip(),
     description='MYPROJECT DESCRIPTION',
     long_description="Tool to analyze block in minecraft maps.",
