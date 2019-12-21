@@ -16,7 +16,7 @@ setup(
     packages=find_packages(where='.', exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     package_data={}, #{'mypkg': ['data/*.dat']},
     scripts=[],
-    license=open('LICENCE.txt').read().strip(),
+    license=open('LICENSE.txt').read().strip(),
     description='MYPROJECT DESCRIPTION',
     long_description=open('DESCRIPTION.txt').read().strip(),
     include_package_data=True,
