@@ -54,6 +54,14 @@ These sections are read with the ![NBT Parser](https://github.com/twoolie/NBT) w
 
 This tool can be used in two ways: List all blocks in a certain area or find the location of blocks in a certain area.
 
+In order to use that tool you have to specify the path to your minecraft world. You can do that either by specifying the argument `world` or by specifying the environment variable `MINECRAFTWORLD` (so the actual commands gets more readable).
+
+Example:
+
+```
+export MINECRAFTWORLD=/home/user/some/path/minecraft/MyWorld/region
+```
+
 ### Listing all blocks
 
 `mcblock  --coords 100 40 -400 --radius 40 --list`
