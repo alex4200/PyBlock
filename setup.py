@@ -10,6 +10,7 @@ requirements = [r if ('git+' not in r) else re.sub(r".*egg=(.*)", r"\1", r).stri
 
 setup(
     name='PyBlock',
+    install_requires=['NBT@git+git://github.com/twoolie/NBT@f9e892'],
     version=open('VERSION.txt').read().strip(),
     author='Alexander Dietz',
     author_email='alexander.dietz17@gmail.com',
@@ -20,7 +21,6 @@ setup(
     description='Tool to analyze block in minecraft maps.',
     long_description="Tool to analyze block in minecraft maps.",
     include_package_data=True,
-    install_requires=requirements,
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Console',
