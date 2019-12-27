@@ -106,4 +106,3 @@ Coordinate ranges (inclusive): x: 2048-2559  / z: -8704--8193
 Last update was tested on Minecraft version **1.15.1** with python 3.6.9.
 
 
-

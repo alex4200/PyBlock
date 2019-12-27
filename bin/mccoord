@@ -14,9 +14,9 @@ from pyblock import converter as conv
 
 
 parser = argparse.ArgumentParser(description='Converting minecraft coordinates.')
-parser.add_argument("--coords", nargs=3,
+parser.add_argument("-c", "--coords", nargs=3,
                     help="Basic Minecraft block coordinates (x/y/z).")
-parser.add_argument("--region", nargs=2,
+parser.add_argument("-r", "--region", nargs=2,
                     help="Region file coordinates (x/z).")
 args = parser.parse_args()
 
