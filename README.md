@@ -17,6 +17,8 @@ Example:
 export MINECRAFTWORLD=/home/user/some/path/minecraft/saves/MyWorld
 ```
 
+For each command you can also set a verbosity to get more debug output, i.e. `-vvv`
+
 ### Listing all blocks
 
 `mc-list  --coords 100 40 -400 --radius 40 `
@@ -27,7 +29,7 @@ You can specify the argument `--vertical` to search the complete vertical column
 
 ### Finding a block
 
-`mc-block --coords 100 40 -400 --radius 20 --find diamond_ore`
+`mc-block --coords 100 40 -400 --radius 20 --block diamond_ore`
 
 This command lists the exact block coordinates of each occurance of the block type 'diamond_ore' that has been found in the specified search area.
 
@@ -74,6 +76,15 @@ for y in range(250):
 editor.done()
 ```
 
+## Installation
+
+To install this tool clone the repository:
+
+```
+git clone https://github.com/alex4200/PyBlock.git
+cd PyBlock
+pip install .
+```
 
 
 
@@ -126,10 +137,12 @@ Each chunk itself is further divided into 'sections' which represent a 16x16x16 
 
 These sections are read with the ![NBT Parser](https://github.com/twoolie/NBT) which handles all the details of how the sections and blocks are stored inside the mca files.
 
+## Acknowledgment
 
+This tool is based on the package [anvil-parser](https://github.com/matcool/anvil-parser).
 
 ## Further information
 
-Last update was tested on Minecraft version **1.15.1** with python 3.6.9.
+Last update was tested on Minecraft version **1.16.5** with python 3.8.7.
 
 
