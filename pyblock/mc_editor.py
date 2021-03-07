@@ -57,5 +57,8 @@ class MCEditor:
 		# Loop over all regions that are affected
 		for region_coord, chunks in self.blocks_map.items():
 			region = Region(self.path, *region_coord)
-			region.update_chunks(chunks)
+			#region.update_chunks(chunks)
+			#region.write()
+			update_chunks = region.update_chunks(chunks)
+			region.write(update_chunks)
 

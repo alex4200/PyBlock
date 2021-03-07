@@ -136,6 +136,29 @@ class Chunk:
             # global Y to section Y
             y %= 16
 
+        if self.version < _VERSION_17w47a:
+            # Explained in depth here https://minecraft.gamepedia.com/index.php?title=Chunk_format&oldid=1153403#Block_format
+
+            if section is None or 'Blocks' not in section:
+                if force_new:
+                    return Block.from_name('minecraft:air')
+                else:
+                    return OldBlock(0)
+
+            index = y * 16 * 16 + z * 16 + x
+
+            block_id = section['Blocks'][index]
+            if 'Add' in section:
+                block_id += nibble(section['Add'], index) << 8
+
+            block_data = nibble(section['Data'], index)
+
+            block = OldBlock(block_id, block_data)
+            if force_new:
+                return block.convert()
+            else:
+                return block
+
         # If its an empty section its most likely an air block
         if section is None or 'BlockStates' not in section:
             return Block.from_name('minecraft:air')
@@ -150,7 +173,16 @@ class Chunk:
         # BlockStates is an array of 64 bit numbers
         # that holds the blocks index on the palette list
         states = section['BlockStates'].value
-        state = index // (64 // bits)
+
+        # in 20w17a and newer blocks cannot occupy more than one element on the BlockStates array
+        stretches = self.version < _VERSION_20w17a
+        # stretches = True
+
+        # get location in the BlockStates array via the index
+        if stretches:
+            state = index * bits // 64
+        else:
+            state = index // (64 // bits)
 
         # makes sure the number is unsigned
         # by adding 2^64
@@ -159,7 +191,28 @@ class Chunk:
         if data < 0:
             data += 2**64
 
-        shifted_data = data >> (index % (64 // bits) * bits)
+        if stretches:
+            # shift the number to the right to remove the left over bits
+            # and shift so the i'th block is the first one
+            shifted_data = data >> ((bits * index) % 64)
+        else:
+            shifted_data = data >> (index % (64 // bits) * bits)
+
+        # if there aren't enough bits it means the rest are in the next number
+        if stretches and 64 - ((bits * index) % 64) < bits:
+            data = states[state + 1]
+            if data < 0:
+                data += 2**64
+
+            # get how many bits are from a palette index of the next block
+            leftover = (bits - ((state + 1) * 64 % bits)) % bits
+
+            # Make sure to keep the length of the bits in the first state
+            # Example: bits is 5, and leftover is 3
+            # Next state                Current state (already shifted)
+            # 0b101010110101101010010   0b01
+            # will result in bin_append(0b010, 0b01, 2) = 0b01001
+            shifted_data = bin_append(data & 2**leftover - 1, shifted_data, bits-leftover)
 
         # get `bits` least significant bits
         # which are the palette index

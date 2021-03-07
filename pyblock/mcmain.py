@@ -16,7 +16,6 @@ import operator
 from collections import OrderedDict
 
 import pyblock
-#from pyblock import converter as conv
 from pyblock import mapper, tools
 
 L = logging.getLogger("pyblock")
@@ -31,6 +30,12 @@ L.addHandler(handler)
 def get_world_path(world):
     """Returns the path to the world, either from an environment variable
     or from an argument.
+
+    Args:
+        world (string): Optional path to the world to be used.
+
+    Returns:
+        string: Path to the world to be used.
     """
     if world:
         return Path(world) / "region"
@@ -51,6 +56,9 @@ def get_area(region, coords, radius, vertical=True):
         coords (list): absolute coordinates of the center point
         radius (int): radius around the center point
         vertical (bool): If True, the whole vertical column is used.
+
+    Returns:
+        int: area 
     """
     # Define the search area
     if region:
@@ -67,56 +75,125 @@ def get_area(region, coords, radius, vertical=True):
     L.debug("Search area: %s" % str(area))
     return area
 
-# TODO: Needs cleanup and documentation
+def get_chunk_area(x, z, dx, dz):
+    """Returns a dict of the regions and the chunks in the specified area. 
+
+    Args:
+        x (int): x coordinate of the start point.
+        z (int): z coordinate of the start point.
+        dx (int): size in x direction.
+        dz (int): size in z direction.
+
+    Returns:
+        dict: Dictionary containing the source chunks
+        int, int: Chunk-rounded source coordinates
+        int, int: Chunk-rounded size to be copied
+    """
+    # Calculate the minimum and maximum chunks for the edges
+    chunk_x_min = tools.block_to_chunk(x , z)[0]
+    chunk_x_max = tools.block_to_chunk(x + dx, z)[0] 
+    chunk_z_min = tools.block_to_chunk(x, z )[1]
+    chunk_z_max = tools.block_to_chunk(x, z + dz)[1] 
+    L.debug(f"chunk range: {chunk_x_min}/{chunk_z_min} to {chunk_x_max}/{chunk_z_max}")
+
+    xmin = chunk_x_min * tools.CHUNK_SIZE
+    zmin = chunk_z_min * tools.CHUNK_SIZE
+    xmax = chunk_x_max * tools.CHUNK_SIZE
+    zmax = chunk_z_max * tools.CHUNK_SIZE
+
+    number_chunks = 0
+    regions = {}
+    for chunk_x in range(chunk_x_min, chunk_x_max+1):
+        for chunk_z in range(chunk_z_min, chunk_z_max+1):
+            chunk = (chunk_x, chunk_z)
+            rel_chunk = (chunk_x % 32, chunk_z % 32)
+            number_chunks += 1
+
+            reg = tools.chunk_to_region(*chunk)
+            if reg in regions:
+                regions[reg].append(rel_chunk)
+            else:
+                regions[reg] = [rel_chunk]
+
+    # Now we have the regions to be analyzed
+    L.info("Analyzing %d regions and %d chunks" % (len(regions.keys()), number_chunks))
+    L.info("Minimum %d/%d to Maximum %d/%d" % (xmin, zmin, xmax, zmax))
+    return regions, (xmin, zmin), (xmax-xmin+tools.CHUNK_SIZE, zmax-zmin+tools.CHUNK_SIZE)
+
+def get_copy_area(source, dest, size):
+    """Returns information related to copying chunks. The source and dest coordinates
+    will be rounded to the next chunk coordinates. So the source and the dest coordinates
+    as well as the sizes will be a multiple of 16 always. 
+
+    Args:
+        source (int, int): x and z coordinates of the absolute starting block coordinates
+        dest (int, int): x and z coordinates of the absolute destination block coordinates
+        size (int, int): Size of area to copy in block coordinates
+
+    Returns:
+        dict: Dictionary containing the dest chunks, and their respective sources
+        int, int: Chunk-rounded source coordinates
+        int, int: Chunk-rounded dest coordinates
+        int, int: Chunk-rounded size to be copied
+    """
+    # Find the chunks for the source
+    source_regions, source_start, source_size = get_chunk_area(*source, *size)
+
+    # Find the shift from the source to the destination in chunk sizes, and get the dest coords.
+    shift_x = (dest[0] - source[0])//tools.CHUNK_SIZE
+    shift_z = (dest[1] - source[1])//tools.CHUNK_SIZE 
+    dest_start = (source_start[0] + shift_x*tools.CHUNK_SIZE, source_start[1] + shift_z*tools.CHUNK_SIZE)
+    L.debug(f"shift (in chunk units): "\
+            f"{shift_x} x {shift_z} = {dest_start[0]} x {dest_start[1]} blocks")
+
+    # For each source chunk, 
+    absolute_source_chunks = []
+    dest_regions = {}
+    for region, chunks in source_regions.items():
+        for chunk in chunks:
+            # Calculate absolute source chunk coordinates
+            abs_chunk_x = region[0] * tools.CHUNKS_REGION + chunk[0]
+            abs_chunk_z = region[1] * tools.CHUNKS_REGION + chunk[1]
+
+            # Add shift from source to dest
+            dest_x = abs_chunk_x + shift_x
+            dest_z = abs_chunk_z + shift_z
+
+            # And get back region and relative chunks
+            dest_region, dest_chunk = tools.abs_chunk_to_region_chunk(dest_x, dest_z)
+
+            # Store the source region and source chunk
+            source_item = {
+                "source_region": region,
+                "source_chunk": chunk
+            }
+            # Store the source information for each destination chunk, ordered by destination region
+            if dest_region in dest_regions:
+                dest_regions[dest_region][dest_chunk] = source_item
+            else:
+                dest_regions[dest_region] = {dest_chunk: source_item}
+
+    return dest_regions, source_start, dest_start, source_size
+
 def get_regions(region, coords, radius, vertical=True):
-    """Returns a dict of all regions used, with a list of related chunks.
+    """Returns a dictionary containing all related regions (key) 
+    and the list of relative chunks (values)
 
     Args:
         region (list): region to use (x/z coordinates)
         coords (list): absolute coordinates of the center point
         radius (int): radius around the center point
-        vertical (bool): If True, the whole vertical column is used.       
+        vertical (bool): If True, the whole vertical column is used. 
+
+    Returns:
+        rdict: Dictionary containing all chunks (values) and related regions (keys)     
     """
     if region:
         regions = {(region[0], region[1]): 'all'}
         check_range = None
     else:
-        # Center coordinates
-        x_c = coords[0]
-        z_c = coords[2]
+        regions, _, _ = get_chunk_area(coords[0] - radius, coords[2] - radius, 2*radius, 2*radius)
 
-        # Calculate absolute chunk coordinates
-        chunk = tools.block_to_chunk(x_c, z_c)
-        L.debug("Middle chunk: %s" % str(chunk))
-
-        # calculate the minimum and maximum chunks for the edges
-        chunk_x_min = tools.block_to_chunk(x_c - radius, z_c)[0]
-        chunk_x_max = tools.block_to_chunk(x_c + radius, z_c)[0]
-        chunk_z_min = tools.block_to_chunk(x_c, z_c - radius)[1]
-        chunk_z_max = tools.block_to_chunk(x_c, z_c + radius)[1]
-
-        # x_min = conv.chunk_to_block(chunk_x_min, z_c)[0][0]
-        # x_max = conv.chunk_to_block(chunk_x_max, z_c)[0][1]
-        # z_min = conv.chunk_to_block(x_c, chunk_z_min)[1][0]
-        # z_max = conv.chunk_to_block(x_c, chunk_z_max)[1][1]
-        # L.debug("Analyzing blocks: x: %d to %d  z: %d to %d" % (x_min, x_max, z_min, z_max))
-
-        number_chunks = 0
-        regions = {}
-        for chunk_x in range(chunk_x_min, chunk_x_max+1):
-            for chunk_z in range(chunk_z_min, chunk_z_max+1):
-                chunk = (chunk_x, chunk_z)
-                rel_chunk = (chunk_x % 16, chunk_z % 16)
-                number_chunks += 1
-
-                reg = tools.chunk_to_region(*chunk)
-                if reg in regions:
-                    regions[reg].append(rel_chunk)
-                else:
-                    regions[reg] = [rel_chunk]
-
-    # Now we have the regions to be analyzed
-    L.info("Analyzing %d regions and %d chunks" % (len(regions.keys()), number_chunks))
     return regions
 
 
@@ -332,9 +409,13 @@ def mcplot(verbose, world, coords, radius, region, output):
     # Get the regions and chunks to analyze
     regions = get_regions(region, coords, radius)
     area = get_area(region, coords, radius)
+    print(regions)
 
+    for reg in regions.keys():
+        print(reg, tools.region_to_block(*reg))
 
-    # TODO: Old code located in Archive/PyBlock/pyblock
+    #sys.exit(0)
+
     pymap = mapper.PyMap(area, output)
     for region_coords, chunk_list in regions.items():        
         # Read the region 
@@ -352,5 +433,73 @@ def mcplot(verbose, world, coords, radius, region, output):
     for block in pymap.unknown_blocks:
         L.warning(block)
 
-def mccopy():
-    L.warning("Not yet implemented")
+
+@click.command()
+@click.option(
+    "-v",
+    "--verbose",
+    count=True,
+    default=0,
+    help="-v for DEBUG",
+)
+@click.option(
+    "--world",
+    help="Path to the minecraft world. Or define MINECRAFTWORLD.",
+)
+@click.option(
+    "--source",
+    nargs=2,
+    type=int,
+    help="Absolute Minecraft coordinates (x/z) specifying the start point of the source.",
+)
+@click.option(
+    "--dest",
+    nargs=2,
+    type=int,
+    help="Absolute Minecraft coordinates (x/z) specifying the start point of the destination.",
+)
+@click.option(
+    "--size",
+    nargs=2,
+    type=int,
+    help="The size of the area to be copied (in (x/z) block units, max 200).",
+)
+@click.option(
+    "--world-source",
+    default=None, 
+    help="Path to the minecraft world the source chunks are taken from",
+)
+@click.option(
+    "--test/--no-test", 
+    default=True,
+    help="If TRUE, the copy parameters are tested without performing any copying.",
+)
+def mccopy(verbose, world, source, dest, size, world_source, test):
+    """Command to find block locations in the specified area.
+    """
+    # Set the logging level
+    level = (logging.WARNING, logging.INFO, logging.DEBUG)[min(verbose, 2)]
+    L.setLevel(level)
+
+    worldpath = get_world_path(world)
+
+    # Use a different world as the source
+    if world_source:
+        world_source = Path(world_source) / "region"
+    else:
+        world_source = worldpath
+
+    # Get the source and destination regions and sizes to be copied
+    dest_regions, start_coord, dest_coord, size_coord = get_copy_area(source, dest, size)
+    
+    if not test:
+        # Loop over all regions that are affected
+        for dest_region, chunks_to_copy in dest_regions.items():
+            region = pyblock.Region(worldpath, *dest_region)
+            copy_chunks = region.read_chunks_to_copy(chunks_to_copy, world_source)
+            region.write(copy_chunks)
+    else:
+        L.warning(f"This would copy a size of {size_coord[0]}x{size_coord[1]} "
+                  f"blocks from coordinates {start_coord[0]}/{start_coord[1]} "
+                  f"to {dest_coord[0]}/{dest_coord[1]}")
+        L.warning("This is a dry run. If you are happy with the coordinates, add '--no-test' to the command.")

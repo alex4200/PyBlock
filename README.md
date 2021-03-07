@@ -43,9 +43,35 @@ This command creates a very simple plot of each level around the coordinates (10
 
 Blocks for which a color is undefined are colored in red. When running this command with `-v` a list of all undefined blocks are listed on the terminal.  
 
-### Copy a chunk
+### Copying chunks
 
-TBD
+This command can be used to copy some areas around. Be careful to use this command, as it can disrupt your landscapes!
+
+To copy a 40x40 block area from 100/100 to 500/200, the command is
+
+`mc-copy --source 100 100 --dest 500 200 --size 40 40`
+
+This command will give you the following output:
+
+```
+This would copy a size of 48x48 blocks from coordinates 96/96 to 496/192
+This is a dry run. If you are happy with the coordinates, add '--no-test' to the command.
+```
+
+As only complete chunks can be copied, the final coordinates might differ slightly from the given coordinates. They have to be a multiple of 16 (which is the size of a chunk). 
+
+If you are satisfied with the actual choice of coordinates, you need to add the option `--no-test` to make the actual changes:
+
+```
+mc-copy --source 100 100 --dest 500 200 --size 40 40 --no-test
+```
+
+You can even use a completly different world as a source! Just use the argument `--world-source` to copy from a different world. 
+
+```
+mc-copy --source 100 100 --dest 500 200 --size 40 40 --world-source /path/to/the/source/world --no-test
+```
+
 
 ### Manipulating blocks
 
@@ -107,10 +133,6 @@ as the region size, the region a block belongs to is
 
 where the brackets denote the `floor` funtion, which returns the closest integer value which is less than or equal to the specified expression or value.
 
-Examples:
-
-![block region](doc/images/floorexample.jpg)
-
 
 In the other way around you might ask the range of a region in block coordinates, then you can calculate it via
 
@@ -118,7 +140,7 @@ In the other way around you might ask the range of a region in block coordinates
 
 ### Chunks
 
-Each region is divided into chunks, which are 16x16 blocks. So when we define 
+Each region is divided into 32x32 chunks, which consist of 16x16 blocks each. So when we define 
 
 s<sub>c</sub>=16
 
@@ -133,9 +155,8 @@ and similar the range of a chunk in block coordinates is calculated as
 
 ### Sections
 
-Each chunk itself is further divided into 'sections' which represent a 16x16x16 block area. Each chunk has 16 vertical stacked sections.
+Each chunk itself is further divided into 'sections' which represent a 16x16x16 cuboid block area. Each chunk has 16 vertical stacked sections.
 
-These sections are read with the ![NBT Parser](https://github.com/twoolie/NBT) which handles all the details of how the sections and blocks are stored inside the mca files.
 
 ## Acknowledgment
 

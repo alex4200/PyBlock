@@ -26,10 +26,10 @@ class Region:
         """Makes a Region object from data, which is the region file content.
 
         Args:
-            path (str): Path to the world
+            path (str): Path to the world folder
             x,z (int): Coordinates of the region
         """
-
+        self.path = path
         self.filename = str(path) + f"/r.{x}.{z}.mca"
         with open(self.filename, "rb") as f:
             self.data = f.read()
@@ -44,7 +44,6 @@ class Region:
         Args:
             chunk_coords (list): List of chunk coordinates
         """
-
         # Get the data of the chunk at the given coordinates
         nbt_data = self.chunk_data(*chunk_coords)
         if nbt_data is None:
@@ -76,7 +75,7 @@ class Region:
         regx = self.x * 512
         regz = self.z * 512
 
-        # Parse the chunk data and add the blocks to the dict
+        # Parse the chunk data and store the coordintes for a matching blocm
         locations = []
         for index, block in enumerate(chunk.stream_chunk()):
             if block.id == blockname:
@@ -91,7 +90,7 @@ class Region:
         """Returns a dict of blocks found in the list of chunks.
 
         Args:
-            chunk_coords (list): List of chunk coordinates
+            list_chunks (list): List of chunk coordinates
         """
         blocks = {}
         for chunk_coord in list_chunks:
@@ -128,6 +127,8 @@ class Region:
             nbt_data = self.chunk_data(*chunk_coords)
             if nbt_data:
                 chunk = pyblock.chunk.Chunk(nbt_data)
+            else: 
+                L.error("No chunk found! Probably this part has never been rendered before!")
 
             # Parse all blocks in the chunk
             for index, block in enumerate(chunk.stream_chunk()):
@@ -135,24 +136,52 @@ class Region:
                 w = index - y * 256
                 z = w // 16
                 x = w - z * 16
-
-                # Sets the pixel in the map
-                pymap.set_block(x + 16*chunk.x + regx, y, z + 16*chunk.z + regz, block)
+                pymap.set_block(x + 16*chunk.x, y, z + 16*chunk.z, block)
 
         return pymap
 
 
+    # def update_chunks(self, chunks):
+    #     """Updates the list of given chunks.
+
+    #     Args:
+    #         chunks: Dictionary with keys being chunk coordinates,
+    #                 and values being a list with relative block coordinates 
+    #                 with elements (block, x, y, z).
+    #     """
+    #     # Dictionary of new chunks
+    #     self.new_chunks = {}
+
+    #     for chunk_coord, locations in chunks.items():
+    #         print(f"Updating chunk {chunk_coord[0]}/{chunk_coord[1]}")
+
+    #         # Copy the chunk
+    #         write_chunk = self.copy_chunk(*chunk_coord)
+
+    #         # Manipulate the block data within the new chunk
+    #         for location in locations:
+    #             write_chunk.set_block(*location)
+
+    #         # Store the manipulated chunk
+    #         self.new_chunks[chunk_coord] = write_chunk
+
+    #     #return new_chunks
+    #     # Write the region to file
+    #     #self.write()
+
     def update_chunks(self, chunks):
-        """Updates the list of given chunks.
+        """Returns a dictionary with updated chunk bytes (value) for a given chunk coordinate (key).
 
         Args:
-            chunks: Dictionary of chunk coordinates, the values are lists of block locations 
-                    within the chunk (content: (block, x, y, z))
+            chunks: Dictionary with keys being chunk coordinates,
+                    and values being a list with relative block coordinates 
+                    with elements (block, x, y, z).
         """
         # Dictionary of new chunks
-        self.new_chunks = {}
+        new_chunks = {}
 
         for chunk_coord, locations in chunks.items():
+            L.debug(f"Updating chunk {chunk_coord[0]}/{chunk_coord[1]}")
 
             # Copy the chunk
             write_chunk = self.copy_chunk(*chunk_coord)
@@ -162,13 +191,69 @@ class Region:
                 write_chunk.set_block(*location)
 
             # Store the manipulated chunk
-            self.new_chunks[chunk_coord] = write_chunk
+            new_chunks[chunk_coord] = write_chunk.get_data()
 
-        # Write the region to file
-        self.write()
+        return new_chunks
+        
 
-    def write(self):
+    # def write(self):
+    #     """Writes the new region to a file.
+    #     Used for editing a chunk
+    #     """
+    #     # Create the final data structure for the file
+    #     locations_header = bytes()
+    #     timestamps = bytes(4096)
+    #     chunk_bytes = bytes()
+
+    #     # A list of two-pairs that denote the location of the chunk and its size
+    #     offsets = []
+
+    #     # An index denoting the location of the current chunk
+    #     sector_offset = 2
+
+    #     # Loop over all chunks inside the region
+    #     for chunk_z in range(32):
+    #         for chunk_x in range(32):
+    #             off, sectors = self.chunk_location(chunk_x, chunk_z)
+    #             if (chunk_x, chunk_z) not in self.new_chunks:
+    #                 if (off, sectors) != (0,0):
+    #                     # Copy the chunk data directly from the data
+    #                     start = off * 4096
+    #                     end = start + sectors * 4096
+    #                     chunk_bytes += self.data[start:end]
+    #                 else: 
+    #                     # Chunk does not exist
+    #                     sectors = 0
+    #             else:
+    #                 L.debug("Writing modified chunk at %d/%d" % (chunk_x, chunk_z))
+    #                 to_add = self.new_chunks[(chunk_x, chunk_z)].get_data()
+    #                 chunk_bytes += to_add
+    #                 sectors = math.ceil(len(to_add) / 4096)
+
+    #             # Add the offset to the locations header
+    #             if sectors==0:
+    #                 locations_header += bytes(4)
+    #             else:
+    #                 locations_header += sector_offset.to_bytes(3, 'big') + sectors.to_bytes(1, 'big')
+
+    #             # Advance the index by the size of the current chunk
+    #             sector_offset += sectors
+
+    #     # Combine the final region data before written to file
+    #     final = locations_header + timestamps + chunk_bytes
+    #     assert len(final) % 4096 == 0 # just in case
+
+    #     # Save to a file 
+    #     L.info("Writing %s" % self.filename)
+    #     with open(self.filename, 'wb') as f:
+    #         f.write(final)
+
+    def write(self, chunks_to_update):
         """Writes the new region to a file.
+        Used for editing a chunk
+
+        Args:
+            chunks_to_update (dict): Dictionary containing data for chunks to be changed. 
         """
         # Create the final data structure for the file
         locations_header = bytes()
@@ -184,8 +269,13 @@ class Region:
         # Loop over all chunks inside the region
         for chunk_z in range(32):
             for chunk_x in range(32):
-                off, sectors = self.chunk_location(chunk_x, chunk_z)
-                if (chunk_x, chunk_z) not in self.new_chunks:
+                chunk_coord = (chunk_x, chunk_z)
+
+                # Get the chunk location
+                off, sectors = self.chunk_location(*chunk_coord)
+
+                if chunk_coord not in chunks_to_update:
+                    # Use existing data without change
                     if (off, sectors) != (0,0):
                         # Copy the chunk data directly from the data
                         start = off * 4096
@@ -195,10 +285,118 @@ class Region:
                         # Chunk does not exist
                         sectors = 0
                 else:
+                    # Use updated data (either modified or copied)
                     L.debug("Writing modified chunk at %d/%d" % (chunk_x, chunk_z))
-                    to_add = self.new_chunks[(chunk_x, chunk_z)].get_data()
-                    chunk_bytes += to_add
-                    sectors = math.ceil(len(to_add) / 4096)
+                    to_add = chunks_to_update[chunk_coord]
+                    if to_add != 0:
+                        chunk_bytes += to_add
+                        sectors = math.ceil(len(to_add) / 4096)
+                    else:
+                        sectors = 0
+
+                # Add the offset to the locations header
+                if sectors==0:
+                    locations_header += bytes(4)
+                else:
+                    locations_header += sector_offset.to_bytes(3, 'big') + sectors.to_bytes(1, 'big')
+
+                # Advance the index by the size of the current chunk
+                sector_offset += sectors
+
+        # Combine the final region data before written to file
+        final = locations_header + timestamps + chunk_bytes
+        assert len(final) % 4096 == 0 # just in case
+
+        # Save to a file 
+        L.info("Writing %s" % self.filename)
+        with open(self.filename, 'wb') as f:
+            f.write(final)
+
+    def read_chunks_to_copy(self, chunks_to_copy, world_source):
+        """Returns a dictionary containing the chunk bytes (values) of chunks to be copied (with
+        coordinates as key).
+
+        Args:
+            chunks_to_copy (dict): Dictionary containing the region and coordinates of the 
+                                   source and destination chunks.
+            world_source (string): Path of the world where the chunks are copied from.
+        """
+
+        copy_chunks = {}
+        for chunk_coord, source_item in chunks_to_copy.items():
+            # Get source information
+            sr = source_item["source_region"]
+            sc = source_item["source_chunk"]
+
+            # Read source region and get location of source chunk
+            source_region = Region(world_source, *sr)
+            off, sectors = source_region.chunk_location(*sc)
+
+            # Copy the chunk data directly from the data
+            if (off, sectors) != (0,0):
+                start = off * 4096
+                end = start + sectors * 4096
+                chunk_bytes = source_region.data[start:end]
+            else:
+                chunk_bytes = 0
+
+            copy_chunks[chunk_coord] = chunk_bytes
+
+        return copy_chunks
+
+    def copy_chunks(self, chunks_to_copy):
+        """Copies and Writes a new region to a file, with the given chunks to be replaced.
+        Used from mcmain.py to copy chunks.
+
+        Args:
+            replace_chunks (dict): Keys are chunks to be replaces, value is the source-region/chunk
+        """
+        # Create the final data structure for the file
+        locations_header = bytes()
+        timestamps = bytes(4096)
+        chunk_bytes = bytes()
+
+        # A list of two-pairs that denote the location of the chunk and its size
+        offsets = []
+
+        # An index denoting the location of the current chunk
+        sector_offset = 2
+
+        # Loop over all chunks inside the region
+        for chunk_z in range(32):
+            for chunk_x in range(32):
+                chunk_coord = (chunk_x, chunk_z)
+                if chunk_coord in chunks_to_copy.keys():
+                    # Here we copy a chunk
+                    L.debug(f"Copying to {chunk_x}/{chunk_z} in region {self.x}/{self.z}")
+                    source_item = chunks_to_copy[chunk_coord]
+                    sr = source_item["source_region"]
+                    sc = source_item["source_chunk"]
+                    L.debug(f"Copying from %d/%d  %d/%d   to  %d/%d  %d/%d",\
+                        sr[0], sr[1], sc[0], sc[1], self.x, self.z, chunk_x, chunk_z)
+
+                    # Read source region and get location of source chunk
+                    source_region = Region(self.path, *sr)
+                    off, sectors = source_region.chunk_location(*sc)
+
+                    # Copy the chunk data directly from the data
+                    if (off, sectors) != (0,0):
+                        start = off * 4096
+                        end = start + sectors * 4096
+                        chunk_bytes += source_region.data[start:end]
+                    else:
+                        sectors = 0
+                else:
+                    # Copy from self
+                    off, sectors = self.chunk_location(chunk_x, chunk_z)
+
+                    # Copy the chunk data directly from the data
+                    if (off, sectors) != (0,0):
+                        start = off * 4096
+                        end = start + sectors * 4096
+                        chunk_bytes += self.data[start:end]
+                    else:
+                        sectors = 0
 
                 # Add the offset to the locations header
                 if sectors==0:
@@ -220,6 +418,7 @@ class Region:
 
     def copy_chunk(self, chunk_x, chunk_z):
         """Returns a copy of the chunk that can be modified.
+        Used in update_chunks.
 
         Args:
             chunk_x: Chunk's X value
@@ -247,102 +446,13 @@ class Region:
             new_section.blocks = section_blocks
             new_chunk.add_section(new_section)
 
-        return new_chunk
-
-    def set_block(self, block, x, y, z):
-        """
-        """
-        print("*** CHECK: region.set_block")
-        self.new_region.set_block(block, x, y, z)      
-
-
-    # X Copied from empty_region
-    def save(self, file):
-        """
-        Returns the region as bytes with
-        the anvil file format structure,
-        aka the final ``.mca`` file.
-
-        Parameters
-        ----------
-        file
-            Either a path or a file object, if given region
-            will be saved there.
-        """
-        # Store all the chunks data as zlib compressed nbt data
-        # chunks_data = []
-        # for chunk in self.chunks:
-        #     if chunk is None:
-        #         chunks_data.append(None)
-        #         continue
-        #     chunk_data = BytesIO()
-        #     if isinstance(chunk, Chunk):
-        #         nbt_data = nbt.NBTFile()
-        #         nbt_data.tags.append(nbt.TAG_Int(name='DataVersion', value=chunk.version))
-        #         nbt_data.tags.append(chunk.data)
-        #     else:
-        #         nbt_data = chunk.save()
-        #     nbt_data.write_file(buffer=chunk_data)
-        #     chunk_data.seek(0)
-        #     chunk_data = zlib.compress(chunk_data.read())
-        #     chunks_data.append(chunk_data)
-
-        # # This is what is added after the location and timestamp header
-        # chunks_bytes = bytes()
-        # offsets = []
-        # for chunk in chunks_data:
-        #     if chunk is None:
-        #         offsets.append(None)
-        #         continue
-        #     # 4 bytes are for length, b'\x02' is the compression type which is 2 since its using zlib
-        #     to_add = (len(chunk)+1).to_bytes(4, 'big') + b'\x02' + chunk
-
-        #     # offset in 4KiB sectors
-        #     sector_offset = len(chunks_bytes) // 4096
-        #     sector_count = math.ceil(len(to_add) / 4096)
-        #     offsets.append((sector_offset, sector_count))
-
-        #     # Padding to be a multiple of 4KiB long
-        #     to_add += bytes(4096 - (len(to_add) % 4096))
-        #     chunks_bytes += to_add
-
-        # locations_header = bytes()
-        # for offset in offsets:
-        #     # None means the chunk is not an actual chunk in the region
-        #     # and will be 4 null bytes, which represents non-generated chunks to minecraft
-        #     if offset is None:
-        #         locations_header += bytes(4)
-        #     else:
-        #         # offset is (sector offset, sector count)
-        #         locations_header += (offset[0] + 2).to_bytes(3, 'big') + offset[1].to_bytes(1, 'big')
-
-        # # Set them all as 0
-        # timestamps_header = bytes(4096)
-
-        # final = locations_header + timestamps_header + chunks_bytes
-
-        # # Pad file to be a multiple of 4KiB in size
-        # # as Minecraft only accepts region files that are like that
-        # final += bytes(4096 - (len(final) % 4096))
-        #assert len(final) % 4096 == 0 # just in case
-
-        print("*** CHECK: region.save")
-
-        final = self.data
-        assert len(final) % 4096 == 0 # just in case
-        print(f"Length of data: {len(final)}  ")
-
-        # Save to a file 
-        with open(self.filename, 'wb') as f:
-            f.write(final)
-        return final
+        return new_chunk  
 
     def get_locations(self):
         return self.data[:4096]
 
     def get_timestamps(self):
         return self.data[4096:8192]
-
 
     @staticmethod
     def header_offset(chunk_x, chunk_z):

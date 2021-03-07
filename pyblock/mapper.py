@@ -73,7 +73,7 @@ class PyLevel:
 
         Args:
             y (int): level dimension
-            dx, dz (int): plot ranges
+            dx, dz (int): Dimension of the plot (in blocks)
         """
         # Level dimension (between 1 and 255)
         self.y = y
@@ -87,14 +87,15 @@ class PyLevel:
         
     def set_block_at_coord(self, x, z, color):
         """Set the color for position x/z.
-        Mirroring the x coodinate to match reality.
 
         Args:
             x,z (int): the coordinates in the image
             color: the color at this point
         """
-        if x<self.dx and z<self.dz:
-            self.data[self.dx - x - 1,z] = color
+        if x>0 and x<self.dx and z>0 and z<self.dz:
+            # The x coordinate must be mirrored to match reality
+            self.data[self.dx - x - 1, z] = color
+        
         
     def draw(self, output):
         """Draws and saves a resized image.
