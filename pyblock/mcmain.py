@@ -27,21 +27,27 @@ handler.setFormatter(log_format)
 L.addHandler(handler)  
 
 
-def get_world_path(world):
+def get_world_path(world, dimension):
     """Returns the path to the world, either from an environment variable
     or from an argument.
 
     Args:
         world (string): Optional path to the world to be used.
+        dimension (string): The dimension to use (overworld, nether)
 
     Returns:
         string: Path to the world to be used.
     """
+    if dimension == "nether":
+        dim_path = "DIM-1/region"
+    else:
+        dim_path = "region"
+
     if world:
-        return Path(world) / "region"
+        return Path(world) / dim_path
 
     if 'MINECRAFTWORLD' in os.environ:
-        return  Path(os.environ['MINECRAFTWORLD']) / "region"
+        return  Path(os.environ['MINECRAFTWORLD']) / dim_path 
     else:
         raise ValueError("Path to world must be defined. Or set MINECRAFTWORLD.")
 
@@ -210,6 +216,11 @@ def get_regions(region, coords, radius, vertical=True):
     help="Path to the minecraft world. Or define MINECRAFTWORLD.",
 )
 @click.option(
+    "--dimension",
+    default="overworld",
+    help="Specify the dimension to look at (overworld, nether).",
+)
+@click.option(
     "-c",
     "--coords",
     nargs=3,
@@ -233,14 +244,14 @@ def get_regions(region, coords, radius, vertical=True):
     default=False,
     help="The whole vertical area is being searched.",
 )
-def mclist(verbose, world, coords, radius, region, vertical):
+def mclist(verbose, world, dimension, coords, radius, region, vertical):
     """Command to list the blocks in the specified area.
     """
     # Set the logging level
     level = (logging.WARNING, logging.INFO, logging.DEBUG)[min(verbose, 2)]
     L.setLevel(level)
 
-    worldpath = get_world_path(world)
+    worldpath = get_world_path(world, dimension)
 
     # Check input parameters
     if not radius:
@@ -290,6 +301,11 @@ def mclist(verbose, world, coords, radius, region, vertical):
     help="Path to the minecraft world. Or define MINECRAFTWORLD.",
 )
 @click.option(
+    "--dimension",
+    default="overworld",
+    help="Specify the dimension to look at (overworld, nether).",
+)
+@click.option(
     "-c",
     "--coords",
     nargs=3,
@@ -318,14 +334,14 @@ def mclist(verbose, world, coords, radius, region, vertical):
     "--block", 
     help="The name of the block to be located.",
 )
-def mcfind(verbose, world, coords, radius, region, vertical, block):
+def mcfind(verbose, world, dimension, coords, radius, region, vertical, block):
     """Command to find block locations in the specified area.
     """
     # Set the logging level
     level = (logging.WARNING, logging.INFO, logging.DEBUG)[min(verbose, 2)]
     L.setLevel(level)
 
-    worldpath = get_world_path(world)
+    worldpath = get_world_path(world, dimension)
 
     # Check input parameters
     if not radius:
@@ -367,6 +383,11 @@ def mcfind(verbose, world, coords, radius, region, vertical, block):
     help="Path to the minecraft world. Or define MINECRAFTWORLD.",
 )
 @click.option(
+    "--dimension",
+    default="overworld",
+    help="Specify the dimension to look at (overworld, nether).",
+)
+@click.option(
     "-c",
     "--coords",
     nargs=3,
@@ -389,14 +410,14 @@ def mcfind(verbose, world, coords, radius, region, vertical, block):
     "--output",
     help="Output folder for the level plots.",
 )
-def mcplot(verbose, world, coords, radius, region, output):
+def mcplot(verbose, world, dimension, coords, radius, region, output):
     """Command to find block locations in the specified area.
     """
     # Set the logging level
     level = (logging.WARNING, logging.INFO, logging.DEBUG)[min(verbose, 2)]
     L.setLevel(level)
 
-    worldpath = get_world_path(world)
+    worldpath = get_world_path(world, dimension)
 
     # Check input parameters
     if not radius:
