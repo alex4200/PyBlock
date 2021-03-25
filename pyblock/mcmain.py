@@ -276,7 +276,6 @@ option_vertical = click.option(
 def mclist(world, dimension, coords, radius, region, vertical):
     """Command to list the blocks in the specified area."""
     # Set the logging level
-    verbose = 3
     level = (logging.WARNING, logging.INFO, logging.DEBUG)[min(verbose, 2)]
     L.setLevel(level)
 
@@ -335,7 +334,6 @@ def mclist(world, dimension, coords, radius, region, vertical):
 def mcfind(world, dimension, coords, radius, region, vertical, block):
     """Command to find block locations in the specified area."""
     # Set the logging level
-    verbose = 3
     level = (logging.WARNING, logging.INFO, logging.DEBUG)[min(verbose, 2)]
     L.setLevel(level)
 
@@ -384,7 +382,6 @@ def mcfind(world, dimension, coords, radius, region, vertical, block):
 def mcplot(world, dimension, coords, radius, region, output):
     """Command to find block locations in the specified area."""
     # Set the logging level
-    verbose = 3
     level = (logging.WARNING, logging.INFO, logging.DEBUG)[min(verbose, 2)]
     L.setLevel(level)
 
@@ -455,7 +452,6 @@ def mcplot(world, dimension, coords, radius, region, output):
 def mccopy(world, source, dest, size, world_source, test):
     """Command to find block locations in the specified area."""
     # Set the logging level
-    verbose = 3
     level = (logging.WARNING, logging.INFO, logging.DEBUG)[min(verbose, 2)]
     L.setLevel(level)
 
