@@ -215,6 +215,14 @@ def get_regions(region, coords, radius, vertical=True):
 
     return regions
 
+def set_log(verbose):
+    """Sets the logging level.
+    """
+    # Set the logging level
+    level = (logging.WARNING, logging.INFO, logging.DEBUG)[min(verbose, 2)]
+    L.setLevel(level)
+
+
 
 # Define the command group with common verbose settings
 @click.group()
@@ -230,7 +238,13 @@ def cli(verbose):
     level = (logging.WARNING, logging.INFO, logging.DEBUG)[min(verbose, 2)]
     L.setLevel(level)
 
-
+option_verbose = click.option(
+    "-v",
+    "--verbose",
+    count=True,
+    default=0,
+    help="-v for DEBUG",
+)
 option_world = click.option(
     "--world",
     help="Path to the minecraft world. Or define MINECRAFTWORLD.",
@@ -266,18 +280,27 @@ option_vertical = click.option(
 )
 
 
+# Define the command group with common verbose settings
+@click.group()
+@option_verbose
+def cli(verbose):
+    # Set the logging level
+    level = (logging.WARNING, logging.INFO, logging.DEBUG)[min(verbose, 2)]
+    L.setLevel(level)
+
+
 @cli.command("list")
+@option_verbose
 @option_world
 @option_dimension
 @option_coordinates
 @option_radius
 @option_region
 @option_vertical
-def mclist(world, dimension, coords, radius, region, vertical):
+def mclist(verbose, world, dimension, coords, radius, region, vertical):
     """Command to list the blocks in the specified area."""
     # Set the logging level
-    level = (logging.WARNING, logging.INFO, logging.DEBUG)[min(verbose, 2)]
-    L.setLevel(level)
+    set_log(verbose)
 
     worldpath = get_world_path(world, dimension)
 
@@ -320,6 +343,7 @@ def mclist(world, dimension, coords, radius, region, vertical):
 
 
 @click.command()
+@option_verbose
 @option_world
 @option_dimension
 @option_coordinates
@@ -331,11 +355,10 @@ def mclist(world, dimension, coords, radius, region, vertical):
     "--block",
     help="The name of the block to be located.",
 )
-def mcfind(world, dimension, coords, radius, region, vertical, block):
+def mcfind(verbose, world, dimension, coords, radius, region, vertical, block):
     """Command to find block locations in the specified area."""
     # Set the logging level
-    level = (logging.WARNING, logging.INFO, logging.DEBUG)[min(verbose, 2)]
-    L.setLevel(level)
+    set_log(verbose)
 
     worldpath = get_world_path(world, dimension)
 
@@ -370,6 +393,7 @@ def mcfind(world, dimension, coords, radius, region, vertical, block):
 
 
 @click.command()
+@option_verbose
 @option_world
 @option_dimension
 @option_coordinates
@@ -379,11 +403,10 @@ def mcfind(world, dimension, coords, radius, region, vertical, block):
     "--output",
     help="Output folder for the level plots.",
 )
-def mcplot(world, dimension, coords, radius, region, output):
+def mcplot(verbose, world, dimension, coords, radius, region, output):
     """Command to find block locations in the specified area."""
     # Set the logging level
-    level = (logging.WARNING, logging.INFO, logging.DEBUG)[min(verbose, 2)]
-    L.setLevel(level)
+    set_log(verbose)
 
     worldpath = get_world_path(world, dimension)
 
@@ -420,6 +443,7 @@ def mcplot(world, dimension, coords, radius, region, output):
 
 
 @click.command()
+@option_verbose
 @option_world
 @click.option(
     "--source",
@@ -449,11 +473,10 @@ def mcplot(world, dimension, coords, radius, region, output):
     default=True,
     help="If TRUE, the copy parameters are tested without performing any copying.",
 )
-def mccopy(world, source, dest, size, world_source, test):
+def mccopy(verbose, world, source, dest, size, world_source, test):
     """Command to find block locations in the specified area."""
     # Set the logging level
-    level = (logging.WARNING, logging.INFO, logging.DEBUG)[min(verbose, 2)]
-    L.setLevel(level)
+    set_log(verbose)
 
     worldpath = get_world_path(world)
 
