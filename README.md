@@ -27,11 +27,15 @@ This command lists all the blocks found in an cuboid area around the coordinates
 
 You can specify the argument `--vertical` to search the complete vertical column. In the example that would be a box with minimal coordinates (60, 0, -440) and maximal coordinates (1400, 255, -360).
 
+To list blocks in the nether you can use the option `--dimension nether`.
+
 ### Finding a block
 
 `mc-block --coords 100 40 -400 --radius 20 --block diamond_ore`
 
 This command lists the exact block coordinates of each occurance of the block type 'diamond_ore' that has been found in the specified search area.
+
+To find blocks in the nether you can use the option `--dimension nether`.
 
 ### Plotting all levels in an area
 

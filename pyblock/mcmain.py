@@ -20,11 +20,13 @@ from pyblock import mapper, tools
 
 L = logging.getLogger("pyblock")
 L.setLevel(logging.DEBUG)
-log_format = logging.Formatter('%(levelname)s  %(msecs)03d:%(asctime)s  %(message)s', "%H%M%S")                                                  
-handler = logging.StreamHandler(sys.stdout)                             
-handler.setLevel(logging.DEBUG)                                        
+log_format = logging.Formatter(
+    "%(levelname)s  %(msecs)03d:%(asctime)s  %(message)s", "%H%M%S"
+)
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(logging.DEBUG)
 handler.setFormatter(log_format)
-L.addHandler(handler)  
+L.addHandler(handler)
 
 
 def get_world_path(world, dimension):
@@ -46,17 +48,17 @@ def get_world_path(world, dimension):
     if world:
         return Path(world) / dim_path
 
-    if 'MINECRAFTWORLD' in os.environ:
-        return  Path(os.environ['MINECRAFTWORLD']) / dim_path 
+    if "MINECRAFTWORLD" in os.environ:
+        return Path(os.environ["MINECRAFTWORLD"]) / dim_path
     else:
         raise ValueError("Path to world must be defined. Or set MINECRAFTWORLD.")
 
 
 def get_area(region, coords, radius, vertical=True):
     """Returns the area in absolute coordinates that is to be searched.
-    Either coordinates and radius is defined, or the region. 
+    Either coordinates and radius is defined, or the region.
     If vertical is True, the whole vertical column is used.
-    
+
     Args:
         region (list): region to use (x/z coordinates)
         coords (list): absolute coordinates of the center point
@@ -64,7 +66,7 @@ def get_area(region, coords, radius, vertical=True):
         vertical (bool): If True, the whole vertical column is used.
 
     Returns:
-        int: area 
+        int: area
     """
     # Define the search area
     if region:
@@ -81,8 +83,9 @@ def get_area(region, coords, radius, vertical=True):
     L.debug("Search area: %s" % str(area))
     return area
 
+
 def get_chunk_area(x, z, dx, dz):
-    """Returns a dict of the regions and the chunks in the specified area. 
+    """Returns a dict of the regions and the chunks in the specified area.
 
     Args:
         x (int): x coordinate of the start point.
@@ -96,10 +99,10 @@ def get_chunk_area(x, z, dx, dz):
         int, int: Chunk-rounded size to be copied
     """
     # Calculate the minimum and maximum chunks for the edges
-    chunk_x_min = tools.block_to_chunk(x , z)[0]
-    chunk_x_max = tools.block_to_chunk(x + dx, z)[0] 
-    chunk_z_min = tools.block_to_chunk(x, z )[1]
-    chunk_z_max = tools.block_to_chunk(x, z + dz)[1] 
+    chunk_x_min = tools.block_to_chunk(x, z)[0]
+    chunk_x_max = tools.block_to_chunk(x + dx, z)[0]
+    chunk_z_min = tools.block_to_chunk(x, z)[1]
+    chunk_z_max = tools.block_to_chunk(x, z + dz)[1]
     L.debug(f"chunk range: {chunk_x_min}/{chunk_z_min} to {chunk_x_max}/{chunk_z_max}")
 
     xmin = chunk_x_min * tools.CHUNK_SIZE
@@ -109,8 +112,8 @@ def get_chunk_area(x, z, dx, dz):
 
     number_chunks = 0
     regions = {}
-    for chunk_x in range(chunk_x_min, chunk_x_max+1):
-        for chunk_z in range(chunk_z_min, chunk_z_max+1):
+    for chunk_x in range(chunk_x_min, chunk_x_max + 1):
+        for chunk_z in range(chunk_z_min, chunk_z_max + 1):
             chunk = (chunk_x, chunk_z)
             rel_chunk = (chunk_x % 32, chunk_z % 32)
             number_chunks += 1
@@ -124,12 +127,17 @@ def get_chunk_area(x, z, dx, dz):
     # Now we have the regions to be analyzed
     L.info("Analyzing %d regions and %d chunks" % (len(regions.keys()), number_chunks))
     L.info("Minimum %d/%d to Maximum %d/%d" % (xmin, zmin, xmax, zmax))
-    return regions, (xmin, zmin), (xmax-xmin+tools.CHUNK_SIZE, zmax-zmin+tools.CHUNK_SIZE)
+    return (
+        regions,
+        (xmin, zmin),
+        (xmax - xmin + tools.CHUNK_SIZE, zmax - zmin + tools.CHUNK_SIZE),
+    )
+
 
 def get_copy_area(source, dest, size):
     """Returns information related to copying chunks. The source and dest coordinates
     will be rounded to the next chunk coordinates. So the source and the dest coordinates
-    as well as the sizes will be a multiple of 16 always. 
+    as well as the sizes will be a multiple of 16 always.
 
     Args:
         source (int, int): x and z coordinates of the absolute starting block coordinates
@@ -146,13 +154,18 @@ def get_copy_area(source, dest, size):
     source_regions, source_start, source_size = get_chunk_area(*source, *size)
 
     # Find the shift from the source to the destination in chunk sizes, and get the dest coords.
-    shift_x = (dest[0] - source[0])//tools.CHUNK_SIZE
-    shift_z = (dest[1] - source[1])//tools.CHUNK_SIZE 
-    dest_start = (source_start[0] + shift_x*tools.CHUNK_SIZE, source_start[1] + shift_z*tools.CHUNK_SIZE)
-    L.debug(f"shift (in chunk units): "\
-            f"{shift_x} x {shift_z} = {dest_start[0]} x {dest_start[1]} blocks")
+    shift_x = (dest[0] - source[0]) // tools.CHUNK_SIZE
+    shift_z = (dest[1] - source[1]) // tools.CHUNK_SIZE
+    dest_start = (
+        source_start[0] + shift_x * tools.CHUNK_SIZE,
+        source_start[1] + shift_z * tools.CHUNK_SIZE,
+    )
+    L.debug(
+        f"shift (in chunk units): "
+        f"{shift_x} x {shift_z} = {dest_start[0]} x {dest_start[1]} blocks"
+    )
 
-    # For each source chunk, 
+    # For each source chunk,
     absolute_source_chunks = []
     dest_regions = {}
     for region, chunks in source_regions.items():
@@ -169,10 +182,7 @@ def get_copy_area(source, dest, size):
             dest_region, dest_chunk = tools.abs_chunk_to_region_chunk(dest_x, dest_z)
 
             # Store the source region and source chunk
-            source_item = {
-                "source_region": region,
-                "source_chunk": chunk
-            }
+            source_item = {"source_region": region, "source_chunk": chunk}
             # Store the source information for each destination chunk, ordered by destination region
             if dest_region in dest_regions:
                 dest_regions[dest_region][dest_chunk] = source_item
@@ -181,29 +191,33 @@ def get_copy_area(source, dest, size):
 
     return dest_regions, source_start, dest_start, source_size
 
+
 def get_regions(region, coords, radius, vertical=True):
-    """Returns a dictionary containing all related regions (key) 
+    """Returns a dictionary containing all related regions (key)
     and the list of relative chunks (values)
 
     Args:
         region (list): region to use (x/z coordinates)
         coords (list): absolute coordinates of the center point
         radius (int): radius around the center point
-        vertical (bool): If True, the whole vertical column is used. 
+        vertical (bool): If True, the whole vertical column is used.
 
     Returns:
-        rdict: Dictionary containing all chunks (values) and related regions (keys)     
+        rdict: Dictionary containing all chunks (values) and related regions (keys)
     """
     if region:
-        regions = {(region[0], region[1]): 'all'}
+        regions = {(region[0], region[1]): "all"}
         check_range = None
     else:
-        regions, _, _ = get_chunk_area(coords[0] - radius, coords[2] - radius, 2*radius, 2*radius)
+        regions, _, _ = get_chunk_area(
+            coords[0] - radius, coords[2] - radius, 2 * radius, 2 * radius
+        )
 
     return regions
 
 
-@click.command()
+# Define the command group with common verbose settings
+@click.group()
 @click.option(
     "-v",
     "--verbose",
@@ -211,43 +225,58 @@ def get_regions(region, coords, radius, vertical=True):
     default=0,
     help="-v for DEBUG",
 )
-@click.option(
+def cli(verbose):
+    # Set the logging level
+    level = (logging.WARNING, logging.INFO, logging.DEBUG)[min(verbose, 2)]
+    L.setLevel(level)
+
+
+option_world = click.option(
     "--world",
     help="Path to the minecraft world. Or define MINECRAFTWORLD.",
 )
-@click.option(
+option_dimension = click.option(
     "--dimension",
     default="overworld",
     help="Specify the dimension to look at (overworld, nether).",
 )
-@click.option(
+option_coordinates = click.option(
     "-c",
     "--coords",
     nargs=3,
     type=int,
     help="Basic absolute Minecraft coordinates (x/y/z).",
 )
-@click.option(
+option_radius = click.option(
     "-r",
     "--radius",
     type=int,
     help="The search radius (in block units, max 200).",
 )
-@click.option(
+option_region = click.option(
     "--region",
     nargs=2,
     type=int,
     help="Region file coordinates (x/z).",
 )
-@click.option(
-    '--vertical/--no-vertical', 
+option_vertical = click.option(
+    "--vertical/--no-vertical",
     default=False,
     help="The whole vertical area is being searched.",
 )
-def mclist(verbose, world, dimension, coords, radius, region, vertical):
-    """Command to list the blocks in the specified area.
-    """
+
+
+@cli.command("list")
+@option_world
+@option_dimension
+@option_coordinates
+@option_radius
+@option_region
+@option_vertical
+def mclist(world, dimension, coords, radius, region, vertical):
+    """Command to list the blocks in the specified area."""
     # Set the logging level
+    verbose = 3
     level = (logging.WARNING, logging.INFO, logging.DEBUG)[min(verbose, 2)]
     L.setLevel(level)
 
@@ -272,13 +301,15 @@ def mclist(verbose, world, dimension, coords, radius, region, vertical):
     # check all regions
     for region_coords, chunk_list in regions.items():
 
-        # Read the region 
+        # Read the region
         region = pyblock.Region(worldpath, *region_coords)
-        L.debug("Analyzing region %d/%d with %d chunks" % (*region_coords, len(chunk_list)))
+        L.debug(
+            "Analyzing region %d/%d with %d chunks" % (*region_coords, len(chunk_list))
+        )
 
         blocks_region = region.list_blocks(chunk_list)
         blocks = pyblock.tools.combine_dicts(blocks, blocks_region)
-       
+
     # Create final sorted output for console
     sorted_tuples = sorted(blocks.items(), key=operator.itemgetter(1))
     sorted_dict = OrderedDict()
@@ -288,56 +319,23 @@ def mclist(verbose, world, dimension, coords, radius, region, vertical):
     for name, number in sorted_dict.items():
         print(f"{name:15s}: {number:,d}")
 
+
 @click.command()
-@click.option(
-    "-v",
-    "--verbose",
-    count=True,
-    default=0,
-    help="-v for DEBUG",
-)
-@click.option(
-    "--world",
-    help="Path to the minecraft world. Or define MINECRAFTWORLD.",
-)
-@click.option(
-    "--dimension",
-    default="overworld",
-    help="Specify the dimension to look at (overworld, nether).",
-)
-@click.option(
-    "-c",
-    "--coords",
-    nargs=3,
-    type=int,
-    help="Basic absolute Minecraft coordinates (x/y/z).",
-)
-@click.option(
-    "-r",
-    "--radius",
-    type=int,
-    help="The search radius (in block units, max 200).",
-)
-@click.option(
-    "--region",
-    nargs=2,
-    type=int,
-    help="Region file coordinates (x/z).",
-)
-@click.option(
-    "--vertical/--no-vertical", 
-    default=False,
-    help="The whole vertical area is being searched.",
-)
+@option_world
+@option_dimension
+@option_coordinates
+@option_radius
+@option_region
+@option_vertical
 @click.option(
     "-b",
-    "--block", 
+    "--block",
     help="The name of the block to be located.",
 )
-def mcfind(verbose, world, dimension, coords, radius, region, vertical, block):
-    """Command to find block locations in the specified area.
-    """
+def mcfind(world, dimension, coords, radius, region, vertical, block):
+    """Command to find block locations in the specified area."""
     # Set the logging level
+    verbose = 3
     level = (logging.WARNING, logging.INFO, logging.DEBUG)[min(verbose, 2)]
     L.setLevel(level)
 
@@ -358,9 +356,11 @@ def mcfind(verbose, world, dimension, coords, radius, region, vertical, block):
     locations = []
     for region_coords, chunk_list in regions.items():
 
-        # Read the region 
+        # Read the region
         region = pyblock.Region(worldpath, *region_coords)
-        L.debug("Analyzing region %d/%d with %d chunks" % (*region_coords, len(chunk_list)))
+        L.debug(
+            "Analyzing region %d/%d with %d chunks" % (*region_coords, len(chunk_list))
+        )
 
         locations.extend(region.find_blocks(chunk_list, block))
 
@@ -369,51 +369,22 @@ def mcfind(verbose, world, dimension, coords, radius, region, vertical, block):
     for loc in locations:
         print(f"{loc[0]:5d}  {loc[1]:5d}  {loc[2]:5d}")
     print(f"\nFound {len(locations)} locations.")
-   
+
+
 @click.command()
-@click.option(
-    "-v",
-    "--verbose",
-    count=True,
-    default=0,
-    help="-v for DEBUG",
-)
-@click.option(
-    "--world",
-    help="Path to the minecraft world. Or define MINECRAFTWORLD.",
-)
-@click.option(
-    "--dimension",
-    default="overworld",
-    help="Specify the dimension to look at (overworld, nether).",
-)
-@click.option(
-    "-c",
-    "--coords",
-    nargs=3,
-    type=int,
-    help="Basic absolute Minecraft coordinates (x/y/z).",
-)
-@click.option(
-    "-r",
-    "--radius",
-    type=int,
-    help="The search radius (in block units, max 200).",
-)
-@click.option(
-    "--region",
-    nargs=2,
-    type=int,
-    help="Region file coordinates (x/z).",
-)
+@option_world
+@option_dimension
+@option_coordinates
+@option_radius
+@option_region
 @click.option(
     "--output",
     help="Output folder for the level plots.",
 )
-def mcplot(verbose, world, dimension, coords, radius, region, output):
-    """Command to find block locations in the specified area.
-    """
+def mcplot(world, dimension, coords, radius, region, output):
+    """Command to find block locations in the specified area."""
     # Set the logging level
+    verbose = 3
     level = (logging.WARNING, logging.INFO, logging.DEBUG)[min(verbose, 2)]
     L.setLevel(level)
 
@@ -430,22 +401,18 @@ def mcplot(verbose, world, dimension, coords, radius, region, output):
     # Get the regions and chunks to analyze
     regions = get_regions(region, coords, radius)
     area = get_area(region, coords, radius)
-    print(regions)
-
-    for reg in regions.keys():
-        print(reg, tools.region_to_block(*reg))
-
-    #sys.exit(0)
 
     pymap = mapper.PyMap(area, output)
-    for region_coords, chunk_list in regions.items():        
-        # Read the region 
+    for region_coords, chunk_list in regions.items():
+        # Read the region
         region = pyblock.Region(worldpath, *region_coords)
-        L.debug("Analyzing region %d/%d with %d chunks" % (*region_coords, len(chunk_list)))
-        
+        L.debug(
+            "Analyzing region %d/%d with %d chunks" % (*region_coords, len(chunk_list))
+        )
+
         # parse the data in this region
         pymap = region.set_blocks_for_map(pymap, chunk_list)
-    
+
     # Draw the final map
     pymap.draw()
 
@@ -456,17 +423,7 @@ def mcplot(verbose, world, dimension, coords, radius, region, output):
 
 
 @click.command()
-@click.option(
-    "-v",
-    "--verbose",
-    count=True,
-    default=0,
-    help="-v for DEBUG",
-)
-@click.option(
-    "--world",
-    help="Path to the minecraft world. Or define MINECRAFTWORLD.",
-)
+@option_world
 @click.option(
     "--source",
     nargs=2,
@@ -487,18 +444,18 @@ def mcplot(verbose, world, dimension, coords, radius, region, output):
 )
 @click.option(
     "--world-source",
-    default=None, 
+    default=None,
     help="Path to the minecraft world the source chunks are taken from",
 )
 @click.option(
-    "--test/--no-test", 
+    "--test/--no-test",
     default=True,
     help="If TRUE, the copy parameters are tested without performing any copying.",
 )
-def mccopy(verbose, world, source, dest, size, world_source, test):
-    """Command to find block locations in the specified area.
-    """
+def mccopy(world, source, dest, size, world_source, test):
+    """Command to find block locations in the specified area."""
     # Set the logging level
+    verbose = 3
     level = (logging.WARNING, logging.INFO, logging.DEBUG)[min(verbose, 2)]
     L.setLevel(level)
 
@@ -511,8 +468,10 @@ def mccopy(verbose, world, source, dest, size, world_source, test):
         world_source = worldpath
 
     # Get the source and destination regions and sizes to be copied
-    dest_regions, start_coord, dest_coord, size_coord = get_copy_area(source, dest, size)
-    
+    dest_regions, start_coord, dest_coord, size_coord = get_copy_area(
+        source, dest, size
+    )
+
     if not test:
         # Loop over all regions that are affected
         for dest_region, chunks_to_copy in dest_regions.items():
@@ -520,7 +479,11 @@ def mccopy(verbose, world, source, dest, size, world_source, test):
             copy_chunks = region.read_chunks_to_copy(chunks_to_copy, world_source)
             region.write(copy_chunks)
     else:
-        L.warning(f"This would copy a size of {size_coord[0]}x{size_coord[1]} "
-                  f"blocks from coordinates {start_coord[0]}/{start_coord[1]} "
-                  f"to {dest_coord[0]}/{dest_coord[1]}")
-        L.warning("This is a dry run. If you are happy with the coordinates, add '--no-test' to the command.")
+        L.warning(
+            f"This would copy a size of {size_coord[0]}x{size_coord[1]} "
+            f"blocks from coordinates {start_coord[0]}/{start_coord[1]} "
+            f"to {dest_coord[0]}/{dest_coord[1]}"
+        )
+        L.warning(
+            "This is a dry run. If you are happy with the coordinates, add '--no-test' to the command."
+        )
