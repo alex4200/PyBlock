@@ -26,10 +26,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'mc-list=pyblock.mcmain:mclist',
-            'mc-find=pyblock.mcmain:mcfind',
-            'mc-plot=pyblock.mcmain:mcplot',
-            'mc-copy=pyblock.mcmain:mccopy'
+            'pyblock=pyblock.mcmain:cli'
         ],
     },
     classifiers=[

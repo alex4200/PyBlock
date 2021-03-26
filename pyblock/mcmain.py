@@ -54,19 +54,17 @@ def get_world_path(world, dimension):
         raise ValueError("Path to world must be defined. Or set MINECRAFTWORLD.")
 
 
-def get_area(region, coords, radius, vertical=True):
-    """Returns the area in absolute coordinates that is to be searched.
+def get_area(region, coords, radius):
+    """Returns the area in absolute coordinates that is searched.
     Either coordinates and radius is defined, or the region.
-    If vertical is True, the whole vertical column is used.
 
     Args:
         region (list): region to use (x/z coordinates)
         coords (list): absolute coordinates of the center point
         radius (int): radius around the center point
-        vertical (bool): If True, the whole vertical column is used.
 
     Returns:
-        int: area
+        int, int: area
     """
     # Define the search area
     if region:
@@ -74,11 +72,6 @@ def get_area(region, coords, radius, vertical=True):
     else:
         coord_min = [c - radius for c in coords]
         coord_max = [c + radius for c in coords]
-
-        # If 'vertical' is True, the whole vertical column is being searched
-        if vertical:
-            coord_min[1] = -1
-            coord_max[1] = 256
         area = (coord_min, coord_max)
     L.debug("Search area: %s" % str(area))
     return area
@@ -192,7 +185,7 @@ def get_copy_area(source, dest, size):
     return dest_regions, source_start, dest_start, source_size
 
 
-def get_regions(region, coords, radius, vertical=True):
+def get_regions(region, coords, radius):
     """Returns a dictionary containing all related regions (key)
     and the list of relative chunks (values)
 
@@ -200,7 +193,6 @@ def get_regions(region, coords, radius, vertical=True):
         region (list): region to use (x/z coordinates)
         coords (list): absolute coordinates of the center point
         radius (int): radius around the center point
-        vertical (bool): If True, the whole vertical column is used.
 
     Returns:
         rdict: Dictionary containing all chunks (values) and related regions (keys)
@@ -210,33 +202,11 @@ def get_regions(region, coords, radius, vertical=True):
         check_range = None
     else:
         regions, _, _ = get_chunk_area(
-            coords[0] - radius, coords[2] - radius, 2 * radius, 2 * radius
+            coords[0] - radius, coords[1] - radius, 2 * radius, 2 * radius
         )
 
     return regions
 
-def set_log(verbose):
-    """Sets the logging level.
-    """
-    # Set the logging level
-    level = (logging.WARNING, logging.INFO, logging.DEBUG)[min(verbose, 2)]
-    L.setLevel(level)
-
-
-
-# Define the command group with common verbose settings
-@click.group()
-@click.option(
-    "-v",
-    "--verbose",
-    count=True,
-    default=0,
-    help="-v for DEBUG",
-)
-def cli(verbose):
-    # Set the logging level
-    level = (logging.WARNING, logging.INFO, logging.DEBUG)[min(verbose, 2)]
-    L.setLevel(level)
 
 option_verbose = click.option(
     "-v",
@@ -257,9 +227,9 @@ option_dimension = click.option(
 option_coordinates = click.option(
     "-c",
     "--coords",
-    nargs=3,
+    nargs=2,
     type=int,
-    help="Basic absolute Minecraft coordinates (x/y/z).",
+    help="Basic absolute Minecraft coordinates (x/z).",
 )
 option_radius = click.option(
     "-r",
@@ -273,11 +243,6 @@ option_region = click.option(
     type=int,
     help="Region file coordinates (x/z).",
 )
-option_vertical = click.option(
-    "--vertical/--no-vertical",
-    default=False,
-    help="The whole vertical area is being searched.",
-)
 
 
 # Define the command group with common verbose settings
@@ -290,18 +255,13 @@ def cli(verbose):
 
 
 @cli.command("list")
-@option_verbose
 @option_world
 @option_dimension
 @option_coordinates
 @option_radius
 @option_region
-@option_vertical
-def mclist(verbose, world, dimension, coords, radius, region, vertical):
-    """Command to list the blocks in the specified area."""
-    # Set the logging level
-    set_log(verbose)
-
+def mclist(world, dimension, coords, radius, region):
+    """Listing all blocks in a specified area."""
     worldpath = get_world_path(world, dimension)
 
     # Check input parameters
@@ -313,7 +273,7 @@ def mclist(verbose, world, dimension, coords, radius, region, vertical):
         raise ValueError("Radius must be below 200.")
 
     # Get the regions and chunks to analyze
-    regions = get_regions(region, coords, radius, vertical)
+    regions = get_regions(region, coords, radius)
 
     # prepare variables
     blocks = {}
@@ -342,24 +302,19 @@ def mclist(verbose, world, dimension, coords, radius, region, vertical):
         print(f"{name:15s}: {number:,d}")
 
 
-@click.command()
-@option_verbose
+@cli.command("find")
 @option_world
 @option_dimension
 @option_coordinates
 @option_radius
 @option_region
-@option_vertical
 @click.option(
     "-b",
     "--block",
     help="The name of the block to be located.",
 )
-def mcfind(verbose, world, dimension, coords, radius, region, vertical, block):
-    """Command to find block locations in the specified area."""
-    # Set the logging level
-    set_log(verbose)
-
+def mcfind(world, dimension, coords, radius, region, block):
+    """Finding block locations in a specified area."""
     worldpath = get_world_path(world, dimension)
 
     # Check input parameters
@@ -371,7 +326,7 @@ def mcfind(verbose, world, dimension, coords, radius, region, vertical, block):
         raise ValueError("Radius must be below 200.")
 
     # Get the regions and chunks to analyze
-    regions = get_regions(region, coords, radius, vertical)
+    regions = get_regions(region, coords, radius)
 
     # Search over all involved regions
     locations = []
@@ -392,8 +347,7 @@ def mcfind(verbose, world, dimension, coords, radius, region, vertical, block):
     print(f"\nFound {len(locations)} locations.")
 
 
-@click.command()
-@option_verbose
+@cli.command("plot")
 @option_world
 @option_dimension
 @option_coordinates
@@ -403,11 +357,8 @@ def mcfind(verbose, world, dimension, coords, radius, region, vertical, block):
     "--output",
     help="Output folder for the level plots.",
 )
-def mcplot(verbose, world, dimension, coords, radius, region, output):
-    """Command to find block locations in the specified area."""
-    # Set the logging level
-    set_log(verbose)
-
+def mcplot(world, dimension, coords, radius, region, output):
+    """Generate rough plots for each level in a specified area."""
     worldpath = get_world_path(world, dimension)
 
     # Check input parameters
@@ -442,8 +393,7 @@ def mcplot(verbose, world, dimension, coords, radius, region, output):
         L.warning(block)
 
 
-@click.command()
-@option_verbose
+@cli.command("copy")
 @option_world
 @click.option(
     "--source",
@@ -473,11 +423,8 @@ def mcplot(verbose, world, dimension, coords, radius, region, output):
     default=True,
     help="If TRUE, the copy parameters are tested without performing any copying.",
 )
-def mccopy(verbose, world, source, dest, size, world_source, test):
-    """Command to find block locations in the specified area."""
-    # Set the logging level
-    set_log(verbose)
-
+def mccopy(world, source, dest, size, world_source, test):
+    """Copy chunks from one place to another, even from a different world."""
     worldpath = get_world_path(world)
 
     # Use a different world as the source

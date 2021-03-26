@@ -5,9 +5,9 @@ This package helps to explore and examine your minecraft world. Find special blo
 ## Usage
 
 Five tools can help to enhance your Minecraft experience. 
-`mc-list` lists all blocks found in an area, `mc-find` lists the coordinates of a block in a certain area, `mc-plot` creates overview plots of each level across the y direction and `mc-copy` can be used to copy whole areas from one place to another place (even across different worlds!). 
+`pyblock list` lists all blocks found in an area, `pyblock find` lists the coordinates of a block in a certain area, `pyblock plot` creates overview plots of each level across the y direction and `pyblock copy` can be used to copy whole areas from one place to another place (even across different worlds!). 
 
-The fifth tool is a module `mc-edit` that enables editing existing worlds with python code. You can build your house, a wall, a maze, whatever you like. 
+The fifth tool is a module that enables editing existing worlds with python code. You can build your house, a wall, a maze or whatever you like using python!
 
 In order to use the tools you have to specify the path to your minecraft world. You can do that either by specifying the argument `--world` or by specifying the environment variable `MINECRAFTWORLD`.
 
@@ -17,21 +17,25 @@ Example:
 export MINECRAFTWORLD=/home/user/some/path/minecraft/saves/MyWorld
 ```
 
-For each command you can also set a verbosity to get more debug output, i.e. `-vvv`
+#### Hints
+
+ * For each command you can set the verbosity to get more debug output, i.e. `pyblock -vv <command>`.
+
+ * If you specify a certain area, the actual search area can differ a bit, as the code is using chunks as the search area.
+
+ * If you find/list/plot or edit larger areas, this can take some minutes to complete. Better to try a smaller area first. Copying chunks around is much faster.
 
 ### Listing all blocks
 
-`mc-list  --coords 100 40 -400 --radius 40 `
+`pyblock list  --coords 100 -400 --radius 40 `
 
-This command lists all the blocks found in an cuboid area around the coordinates (100,40,-400) within a box-'radius' of 40. The search area is a box with minimal coordinates (60, 0, -440) and maximal coordinates (1400, 80, -360).
-
-You can specify the argument `--vertical` to search the complete vertical column. In the example that would be a box with minimal coordinates (60, 0, -440) and maximal coordinates (1400, 255, -360).
+This command lists all the blocks found in an cuboid area around the coordinates x=100, z=-400 within a box-'radius' of 40. The search area is a box with minimal coordinates (60, 0, -440) and maximal coordinates (1400, 255, -360). Always the complete vertical rage is used.
 
 To list blocks in the nether you can use the option `--dimension nether`.
 
 ### Finding a block
 
-`mc-block --coords 100 40 -400 --radius 20 --block diamond_ore`
+`pyblock find --coords 100 -400 --radius 20 --block diamond_ore`
 
 This command lists the exact block coordinates of each occurance of the block type 'diamond_ore' that has been found in the specified search area.
 
@@ -41,11 +45,11 @@ To find blocks in the nether you can use the option `--dimension nether`.
 
 You also can use a tool to analyze a complete region file, e.g.
 
-`mc-plot --coords 100 40 200 --radius 100 --output Levels`
+`pyblock plot --coords 100 200 --radius 100 --output Levels`
 
-This command creates a very simple plot of each level around the coordinates (100,40,200) within a 'radius' of 100 blocks, and stores it in the specified folder. Each block gets a color according to the mapping in the file `block_colors.py`. 
+This command creates a very simple plot of each level around the coordinates x=100, z=200 within a 'radius' of 100 blocks, and stores it in the specified folder. Each block gets a color according to the mapping in the file `block_colors.py`. Please update this file to color the blocks to your needs.
 
-Blocks for which a color is undefined are colored in red. When running this command with `-v` a list of all undefined blocks are listed on the terminal.  
+Blocks for which a color is undefined are colored in red. When running this command with `-v` a list of all undefined blocks are listed in the terminal.  
 
 ### Copying chunks
 
@@ -53,7 +57,7 @@ This command can be used to copy some areas around. Be careful to use this comma
 
 To copy a 40x40 block area from 100/100 to 500/200, the command is
 
-`mc-copy --source 100 100 --dest 500 200 --size 40 40`
+`pyblock copy --source 100 100 --dest 500 200 --size 40 40`
 
 This command will give you the following output:
 
@@ -62,18 +66,18 @@ This would copy a size of 48x48 blocks from coordinates 96/96 to 496/192
 This is a dry run. If you are happy with the coordinates, add '--no-test' to the command.
 ```
 
-As only complete chunks can be copied, the final coordinates might differ slightly from the given coordinates. They have to be a multiple of 16 (which is the size of a chunk). 
+As only complete chunks will be copied, the final coordinates might differ slightly from the given coordinates. They have to be a multiple of 16 (which is the size of a chunk). 
 
 If you are satisfied with the actual choice of coordinates, you need to add the option `--no-test` to make the actual changes:
 
 ```
-mc-copy --source 100 100 --dest 500 200 --size 40 40 --no-test
+pyblock copy --source 100 100 --dest 500 200 --size 40 40 --no-test
 ```
 
 You can even use a completly different world as a source! Just use the argument `--world-source` to copy from a different world. 
 
 ```
-mc-copy --source 100 100 --dest 500 200 --size 40 40 --world-source /path/to/the/source/world --no-test
+pyblock copy --source 100 100 --dest 500 200 --size 40 40 --world-source /path/to/the/source/world --no-test
 ```
 
 

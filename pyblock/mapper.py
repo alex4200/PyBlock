@@ -17,14 +17,14 @@ class PyMap:
         """Initializes the map with the given area coordinates and the output folder.
 
         Args:
-            area (list): 2 dimensional matrix containing the map area
+            area (list): 2 dimensional matrix containing the map area (x/z)
             output (str): output folder
         """ 
         # Set coordinate limits
         self.xmin = area[0][0]
         self.xmax = area[1][0]
-        self.zmin = area[0][2]
-        self.zmax = area[1][2]
+        self.zmin = area[0][1]
+        self.zmax = area[1][1]
 
         # Set the output folder
         self.output = output
