@@ -11,7 +11,7 @@ from . import chunk, empty_chunk
 from . import empty_section
 from .errors import GZipChunkData
 from .block import Block
-from .tools import combine_dicts, index_to_coord
+from .tools import combine_dicts, index_to_coord, block_to_region
 
 L = logging.getLogger("pyblock")
 
@@ -469,7 +469,7 @@ class Region:
 
         :rtype: :class:`anvil.Chunk`
         """
-        return anvil.Chunk.from_region(self, chunk_x, chunk_z)
+        return chunk.Chunk.from_region(self, chunk_x, chunk_z)
 
     @classmethod
     def from_file(cls, file):

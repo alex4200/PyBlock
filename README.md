@@ -110,6 +110,37 @@ for y in range(250):
 editor.done()
 ```
 
+The editor also enables to get the blocks are a given location with
+
+```
+block = editor.get_block(x,y,z)
+```
+
+which returns an instance of a Block. You can then get the name of the block using
+
+```
+print(block.id)
+```
+
+or you can get the block properties, for example:
+
+```
+print(block.id, block.properties)
+> spruce_planks {'hinge': right, 'half': upper, 'powered': false, 'facing': south, 'open': false}
+```
+
+On contrast, to create an instance of a block with some properties, use `states` instead of `properties`: 
+
+```
+button = pyblock.Block('minecraft', 'warped_button', states = {"face": "floor", "facing": "north"})
+```
+
+#### Hints
+
+ * With the above receipt, it is easy to copy things around. 
+ * Not all items are copied correctly, most notable beds, signs and chests. 
+
+
 ## Installation
 
 To install this tool clone the repository:
