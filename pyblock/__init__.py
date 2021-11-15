@@ -6,3 +6,4 @@ from .empty_chunk import EmptyChunk
 from .empty_section import EmptySection
 from .raw_section import RawSection
 from .mc_editor import MCEditor
+from .maze import Maze

@@ -17,6 +17,10 @@ Example:
 export MINECRAFTWORLD=/home/user/some/path/minecraft/saves/MyWorld
 ```
 
+#### Important
+
+**Always exit your minecraft game before doing any world manipulations. It could create undesired interferences!**
+
 #### Hints
 
  * For each command you can set the verbosity to get more debug output, i.e. `pyblock -vv <command>`.
@@ -138,7 +142,174 @@ button = pyblock.Block('minecraft', 'warped_button', states = {"face": "floor", 
 #### Hints
 
  * With the above receipt, it is easy to copy things around. 
- * Not all items are copied correctly, most notable beds, signs and chests. 
+ * Not all items are copied correctly; most notable beds, signs and chests.
+
+### Maze Creation
+
+You also can easily create **mazes** within your minecraft world. Each maze contains one path from an entry point to an exit point, without containing any loops. Each generated maze will be different, and you can use your own exterior shape. 
+
+Here is an example on how to use it:
+
+
+```
+import pyblock
+
+# Define the path to the world
+path = "/path/to/minecraft/saves/MyWorld"
+
+# Creates the logical 10x10 maze
+height = 10
+width = 10
+mymaze = pyblock.Maze(height, width)
+mymaze.create()
+
+# Initialize the editor
+editor = pyblock.MCEditor(path)
+
+# Create the maze within minecraft at the given location with the given materials.
+# The first number tuple is the (x,y,z) coordinates of the most negative edge.
+# The next tuple defines the blocks to be used as (floor, wall, ceiling).
+# The `mag` parameter specifies a magnification of the maze in each direction.
+# If `mag=1`, each path has size 1, if `mag=2`, the size is 2 etc.
+editor.create_maze(mymaze, (800, 75, 1312), ("dirt_block", "oak_log", "air"), mag=2)
+editor.done()
+```
+
+The maze creation works in two steps.
+
+1. You create a logical maze of your desired size.
+2. You pass that logical maze to `MCEditor.create_maze` to generate the maze in minecraft with proper blocks.
+
+The internal representation of the initial maze is like following:
+
+```
+BBBBBeBBBB
+B########B
+B########B
+B########B
+B########B
+B########B
+B########B
+B########B
+B########B
+BBBBBeBBBB
+```
+
+* `B` means the outside border
+* `#` means the area where a path will be created
+* `e` are the entry and exit points.
+
+After creating the logical maze, it looks e.g. something like this:
+
+```
+BBBBBeBBBB
+B     #  B
+B## #  # B
+B   ##   B
+B ## ## #B
+B #      B
+B #### # B
+B     ## B
+B # # #  B
+BBBBBeBBBB
+```
+
+Now the path is clearly visible.
+
+#### Commands
+
+For `pyblock.Maze` you have the following command:
+
+```
+pyblock.Maze(width = 10, height = 10, entry_point = None, exit_point = None, debug = False)
+```
+
+* `width`: The width of the maze (z-dimension).
+* `height`: The height of the maze (x-dimension).
+* `entry_point`: The location of the entry point of the maze. If no point is given, the middle point on the lower x dimension is choosen.
+* `exit_point`: The location of the exit point of the maze. If no point is given, the middle point on the upper x dimension is choosen.
+* `debug`: If set to `True`, the creation of the maze can be seen in the terminal.
+
+
+For the `MCEditor.create_maze` you have the following command:
+
+```
+MCEditor.create_maze(maze, coord, blocks, height = 4, mag=1)
+```
+
+* `maze`: The logical maze from the first step.
+* `coord`: The coordinates of the start point of the maze (x,y,z).
+* `blocks`: Specifies the blocks to be used for the floor, the wall and the ceiling.
+* `height`: Specifies the height of the walls (in units of blocks).
+* `mag`: Magnifier for the maze itself, gives the width of the paths and the walls.
+
+
+#### Maze shape
+
+With the two-step procedure, you can give the maze any 2-dimensional shape you want. In the following example, the maze is a 30x30 large maze, but with a clear 10x10 area in the middle of the maze, and the exit point on the lower part of that clear inner area:
+
+```
+height = 30
+width = 30
+exit_point = (15, 20)
+mymaze = pyblock.Maze(height, width, exit_point=exit_point, debug=True)
+
+# Create the new inner border surrounding the inner part
+inner_x = 10
+inner_z = 10
+inner_d = 10
+
+# Clear the inner part
+for x in range(inner_x, inner_x + inner_d):
+	for z in range(inner_z, inner_z + inner_d):
+		mymaze.set_clear(x,z)
+
+# Create the new inner border surrounding the inner part
+for x in range(inner_x, inner_x + inner_d):
+	mymaze.set_border(x, 10)
+	mymaze.set_border(x, 20)
+for z in range(inner_z, inner_z + inner_d):
+	mymaze.set_border(10, z)
+	mymaze.set_border(20, z)
+```
+
+With that custom-shape of the maze, the final logical maze looks e.g. something like this:
+
+
+```
+BBBBBBBBBBBBBBBeBBBBBBBBBBBBBB
+B  # #       #  #  #         B
+B#   # # ### # # #   ####### B
+B# #   #    #  #   ##       #B
+B  #### ###  # # #    ##### #B
+B #        #   ### # #    #  B
+B  ### # #  ###   ###  ##  # B
+B#   #  ### # # #  #  ## #   B
+B ##  #  #       #   #   # # B
+B   #  #  ###########  # #  #B
+B #  #   #BBBBBBBBBBB # ###  B
+B  #  ## #B         B    ### B
+B#  #    #B         B ##  ## B
+B  # # # #B         B   #    B
+B #   #  #B         B ## ####B
+B # #  # #B         B    #   B
+B#  ##  ##B         B# #  # #B
+B# #  # ##B         B  # #  #B
+B  # #   #B         B #   #  B
+B #   # ##B         B#  #  # B
+B  ## #   BBBBBeBBBB   ### # B
+B# #   ##  #    ##   ## #  # B
+B  ## #  #  # ##   # #    ## B
+B #    #  #   #####  # # #   B
+B  # #   # ### #    ##  #  # B
+B#  #  #     #   #### #  # # B
+B  #  # ## ##  ##      #   # B
+B # # #  # #  # # # ### ###  B
+B       #    #    #         #B
+BBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+```
+
+
 
 
 ## Installation

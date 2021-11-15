@@ -8,6 +8,7 @@ from .block import Block
 from .region import Region
 from .tools import block_to_region_chunk
 from . import converter as conv
+from .maze import Maze
 
 
 L = logging.getLogger("pyblock")
@@ -79,6 +80,71 @@ class MCEditor:
         coords = block_coord[0], y, block_coord[1]
         return chunk.get_block(*coords)
 
+    def place_piece(
+        self, x1, y1, z1, block_floor, block_fill, block_ceil, height=4, mag=1
+    ):
+        """Places an element of the maze.
+
+        Args:
+            x1 (int): x coordinate
+            y1 (int): y coordinate
+            z1 (int): z coordinate
+            block_floor: minecraft block for the floor
+            block_fill: minecraft block to fill
+            block_ceil: minecraft block for the ceiling
+            height (int): The height of the walls
+            mag (int): Magnifier of the maze. 1 means 1:1 size, 2 means all walls, ways
+                       are double size etc.
+        """
+        for dx in range(mag):
+            for dz in range(mag):
+                x = x1 + dx
+                z = z1 + dz
+                self.set_block(block_floor, x, y1, z)
+                for y in range(y1, y1 + height):
+                    self.set_block(block_fill, x, y + 1, z)
+                self.set_block(block_ceil, x, y1 + height + 1, z)
+
+    def create_maze(self, maze, coord, blocks, height=4, mag=1):
+        """Creates and places a maze with given width and height.
+        start_coord is the starting coorinates (x,y,z) and
+        blocks is a list of the three blocks for the floow, the wall and the ceiling.
+
+        Args:
+            size (int, int): Size of the maze in x/z direction
+            coord (int, int, int): Start coordinates of the maze
+            blocks (string, string, string): Names for the blocks for floor, wall and ceiling
+            height (int): Height of the inside of the maze (default: 4)
+            mag (int): Magnifier number of the maze (thickness of path/walls)
+        """
+        # Get the maze as a simple 0/1 matrix
+        matrix = maze.get_matrix()
+
+        # Define the blocks
+        block_floor = Block("minecraft", blocks[0])
+        block_wall = Block("minecraft", blocks[1])
+        block_ceil = Block("minecraft", blocks[2])
+        block_air = Block("minecraft", "air")
+
+        # Get the coordinates
+        x0 = coord[0]
+        y0 = coord[1]
+        z0 = coord[2]
+
+        # Place the walls, floor and ceiling
+        for row, lines in enumerate(matrix):
+            for col, block in enumerate(lines):
+                x = x0 + mag * row
+                z = z0 + mag * col
+
+                if block:
+                    self.place_piece(
+                        x, y0, z, block_floor, block_wall, block_ceil, mag=mag
+                    )
+                else:
+                    self.place_piece(
+                        x, y0, z, block_floor, block_air, block_ceil, mag=mag
+                    )
 
     def _read_map_file(self, map_file):
         """Returns a block dict from the given filename."""
@@ -126,7 +192,9 @@ class MCEditor:
 
         # Loop over all regions that are affected
         for region_coord, chunks in self.blocks_map.items():
-            L.info(f"Modifying {len(chunks)} chunks in region {region_coord[0]}/{region_coord[1]}/")
+            L.info(
+                f"Modifying {len(chunks)} chunks in region {region_coord[0]}/{region_coord[1]}/"
+            )
             region = Region(self.path, *region_coord)
             update_chunks = region.update_chunks(chunks)
             region.write(update_chunks)

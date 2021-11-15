@@ -29,7 +29,7 @@ handler.setFormatter(log_format)
 L.addHandler(handler)
 
 
-def get_world_path(world, dimension):
+def get_world_path(world, dimension="overworld"):
     """Returns the path to the world, either from an environment variable
     or from an argument.
 
