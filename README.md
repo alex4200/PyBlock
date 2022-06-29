@@ -1,13 +1,38 @@
 # PyBlock
 
-This package helps to explore and examine your minecraft world. Find special blocks or get some overview of what you can find in your region/area of interest!
+This package helps to explore and examine your minecraft world. Find special blocks, get a graphical overview of your underworld, create any structures and copy areas from one world to another! 
+
+
+- [Installation](#installation) — Install instructions
+- [Usage](#usage) - Usage examples
+ - [Listing all blocks](#listing-all-blocks) - How to list all blocks in an area
+ - [Finding blocks](#finding-blocks) - Finding the locations of a specic block in an area
+ - [Map Creation](#map-creation) - Create maps for each y level.
+ - [Chest investigation](#chest-investigation) - Find chests and list their contents
+ - [Copying blocks](#copying-blocks) - Copying areas of blocks at other locations
+ - [Block Walker](#block-walker) - Walks you to the nearest location of a specific block
+ - [Surface image creation](#surface-image-creation) - Creates a surface showing an image
+- [Python API](#python-api) - Examples on how to use the API to edit your minecraft world in python
+- [Details](#details) Some details on the internals of how minecraft organizes the blocks (regions, chunks and sections)
+- [Acknowledgment](#acknowledgement) - Acknowledgements
+- [Further Information](#further-information) - Links to further resources
+
+
+
+## Installation
+
+To install this tool clone the repository:
+
+```
+git clone https://github.com/alex4200/PyBlock.git
+cd PyBlock
+pip install .
+```
 
 ## Usage
 
-Five tools can help to enhance your Minecraft experience. 
-`pyblock list` lists all blocks found in an area, `pyblock find` lists the coordinates of a block in a certain area, `pyblock plot` creates overview plots of each level across the y direction and `pyblock copy` can be used to copy whole areas from one place to another place (even across different worlds!). 
+**Several tools that can help to enhance your Minecraft experience.**
 
-The fifth tool is a module that enables editing existing worlds with python code. You can build your house, a wall, a maze or whatever you like using python!
 
 In order to use the tools you have to specify the path to your minecraft world. You can do that either by specifying the argument `--world` or by specifying the environment variable `MINECRAFTWORLD`.
 
@@ -25,66 +50,100 @@ export MINECRAFTWORLD=/home/user/some/path/minecraft/saves/MyWorld
 
  * For each command you can set the verbosity to get more debug output, i.e. `pyblock -vv <command>`.
 
- * If you specify a certain area, the actual search area can differ a bit, as the code is using chunks as the search area.
+ * If you use large areas, the code might take some minutes to complete. Better to try a smaller area first. 
 
- * If you find/list/plot or edit larger areas, this can take some minutes to complete. Better to try a smaller area first. Copying chunks around is much faster.
+ * In case you see an error saying `Chunk x/y has not been generated yet` then this specific chunk has not been generated yet. You need to go/fly into this area so that minacraft is creating the world in that area.
+
+Now here come the command line tools:
 
 ### Listing all blocks
 
-`pyblock list  --coords 100 -400 --radius 40 `
+```
+pyblock list  --coords 100 -400 --radius 40 
+```
 
-This command lists all the blocks found in an cuboid area around the coordinates x=100, z=-400 within a box-'radius' of 40. The search area is a box with minimal coordinates (60, 0, -440) and maximal coordinates (1400, 255, -360). Always the complete vertical rage is used.
+This command lists all the blocks found in an cuboid area around the coordinates x=100, z=-400 within a box-'radius' of 40. The search area is a box with minimal coordinates (60, -64, -440) and maximal coordinates (140, 320, -360). Always the complete vertical rage is used.
 
 To list blocks in the nether you can use the option `--dimension nether`.
 
-### Finding a block
+### Finding blocks
 
 `pyblock find --coords 100 -400 --radius 20 --block diamond_ore`
 
-This command lists the exact block coordinates of each occurance of the block type 'diamond_ore' that has been found in the specified search area.
+This command lists the exact block coordinates of each occurance of the block type `diamond_ore` that has been found in the specified search area.
 
 To find blocks in the nether you can use the option `--dimension nether`.
 
-### Plotting all levels in an area
+### Map Creation
 
 You also can use a tool to analyze a complete region file, e.g.
 
 `pyblock plot --coords 100 200 --radius 100 --output Levels`
 
-This command creates a very simple plot of each level around the coordinates x=100, z=200 within a 'radius' of 100 blocks, and stores it in the specified folder. Each block gets a color according to the mapping in the file `block_colors.py`. Please update this file to color the blocks to your needs.
+This command creates a very simple plot of each level around the coordinates x=100, z=200 within a 'radius' of 100 blocks, and stores it in the specified folder. Each block is colored according to the average color of the block's appearance. 
 
-Blocks for which a color is undefined are colored in red. When running this command with `-v` a list of all undefined blocks are listed in the terminal.  
+You can override the color for a block by specifying a json file with the color to use for a given block (example: `user_map.json`). That way, you can mark special blocks to stand out. 
 
-### Copying chunks
+### Chest investigation
+
+You can check the content of chests by running the command
+
+`pyblock chest --coords 100 200 --radius 100`
+
+This will list the content of every chest in a  100 block 'radius' around the coordinates 100/200. If a chest has never been opened, the content is not defined and no content will be shown. 
+
+### Copying blocks
 
 This command can be used to copy some areas around. Be careful to use this command, as it can disrupt your landscapes!
 
-To copy a 40x40 block area from 100/100 to 500/200, the command is
+To copy a 20x30x20 block area from 0/50/20 to 30/80/40, the command is
 
-`pyblock copy --source 100 100 --dest 500 200 --size 40 40`
-
-This command will give you the following output:
-
-```
-This would copy a size of 48x48 blocks from coordinates 96/96 to 496/192
-This is a dry run. If you are happy with the coordinates, add '--no-test' to the command.
-```
-
-As only complete chunks will be copied, the final coordinates might differ slightly from the given coordinates. They have to be a multiple of 16 (which is the size of a chunk). 
-
-If you are satisfied with the actual choice of coordinates, you need to add the option `--no-test` to make the actual changes:
-
-```
-pyblock copy --source 100 100 --dest 500 200 --size 40 40 --no-test
-```
+`pyblock copy --source 0 50 20 --dest 30 80 40 --size 20 30 20`
 
 You can even use a completly different world as a source! Just use the argument `--world-source` to copy from a different world. 
 
 ```
-pyblock copy --source 100 100 --dest 500 200 --size 40 40 --world-source /path/to/the/source/world --no-test
+pyblock copy --source 100 0 100 --dest 500 0 200 --size 40 200 40 --world-source /path/to/the/source/world
 ```
 
 
+### Block Walker
+
+You can 'help' yourself in survival mode to more easily find rare blocks. You just go to a place where you want to start your search, get your current location, and run the command
+
+```
+pyblock walker -p 100 20 200 -r 200 --dimension nether --block ancient_debris
+```
+
+and the coordinates of the nearest block is printed out, along with how to get there:
+
+```
+Go   dx: -3  dz: 5  dy: 2 for next location at (-3, 32, -13) with distance 3.  
+Enter key: 
+```
+
+In that case, you have to go from your location 3 blocks in negative x direction 5 blocks in positive z direction and 2 blocks up to find the next block.
+
+Just press `Enter` to see the information to get to the next block and `q` to end the command.
+
+### Surface image creation
+
+You can use the following command to create a surface in the minecraft world to represent any image. You just do e.g.
+
+```
+pyblock image -p 0 100 1000 --image examples/birds.jpg -s 1
+```
+
+which will re-create the image of the file `birds.jpg`  as a surface with start coordinates 0/100/1000. To creete the image, only solid blocks are being used as defined in `block_items.txt`.
+
+The parameter `s` defines the scaling. (blocks per pixel). For `-s 1` the original scaling of the image will be used, i.e. if the image has a size of 400x300 pixels the resulting surface in minecraft will cover an area of 400x300 blocks. 
+
+If the scale factor is e.g. `0.5`, then the resulting surface in minecraft will be 200x150 blocks.
+
+No interpolation is done.
+
+
+## Python API
 ### Manipulating blocks
 
 It is possible to manipulate blocks in the specified world with a python script. The following example creates a wall of `bedrock` around a 500x500 area:
@@ -142,38 +201,11 @@ button = pyblock.Block('minecraft', 'warped_button', states = {"face": "floor", 
 #### Hints
 
  * With the above receipt, it is easy to copy things around. 
- * Not all items are copied correctly; most notable beds, signs and chests.
+ * Not all items are copied correctly; most notable frames.
 
 ### Maze Creation
 
 You also can easily create **mazes** within your minecraft world. Each maze contains one path from an entry point to an exit point, without containing any loops. Each generated maze will be different, and you can use your own exterior shape. 
-
-Here is an example on how to use it:
-
-
-```
-import pyblock
-
-# Define the path to the world
-path = "/path/to/minecraft/saves/MyWorld"
-
-# Creates the logical 10x10 maze
-height = 10
-width = 10
-mymaze = pyblock.Maze(height, width)
-mymaze.create()
-
-# Initialize the editor
-editor = pyblock.MCEditor(path)
-
-# Create the maze within minecraft at the given location with the given materials.
-# The first number tuple is the (x,y,z) coordinates of the most negative edge.
-# The next tuple defines the blocks to be used as (floor, wall, ceiling).
-# The `mag` parameter specifies a magnification of the maze in each direction.
-# If `mag=1`, each path has size 1, if `mag=2`, the size is 2 etc.
-editor.create_maze(mymaze, (800, 75, 1312), ("dirt_block", "oak_log", "air"), mag=2)
-editor.done()
-```
 
 The maze creation works in two steps.
 
@@ -215,64 +247,6 @@ BBBBBeBBBB
 ```
 
 Now the path is clearly visible.
-
-#### Commands
-
-For `pyblock.Maze` you have the following command:
-
-```
-pyblock.Maze(width = 10, height = 10, entry_point = None, exit_point = None, debug = False)
-```
-
-* `width`: The width of the maze (z-dimension).
-* `height`: The height of the maze (x-dimension).
-* `entry_point`: The location of the entry point of the maze. If no point is given, the middle point on the lower x dimension is choosen.
-* `exit_point`: The location of the exit point of the maze. If no point is given, the middle point on the upper x dimension is choosen.
-* `debug`: If set to `True`, the creation of the maze can be seen in the terminal.
-
-
-For the `MCEditor.create_maze` you have the following command:
-
-```
-MCEditor.create_maze(maze, coord, blocks, height = 4, mag=1)
-```
-
-* `maze`: The logical maze from the first step.
-* `coord`: The coordinates of the start point of the maze (x,y,z).
-* `blocks`: Specifies the blocks to be used for the floor, the wall and the ceiling.
-* `height`: Specifies the height of the walls (in units of blocks).
-* `mag`: Magnifier for the maze itself, gives the width of the paths and the walls.
-
-
-#### Maze shape
-
-With the two-step procedure, you can give the maze any 2-dimensional shape you want. In the following example, the maze is a 30x30 large maze, but with a clear 10x10 area in the middle of the maze, and the exit point on the lower part of that clear inner area:
-
-```
-height = 30
-width = 30
-exit_point = (15, 20)
-mymaze = pyblock.Maze(height, width, exit_point=exit_point, debug=True)
-
-# Create the new inner border surrounding the inner part
-inner_x = 10
-inner_z = 10
-inner_d = 10
-
-# Clear the inner part
-for x in range(inner_x, inner_x + inner_d):
-	for z in range(inner_z, inner_z + inner_d):
-		mymaze.set_clear(x,z)
-
-# Create the new inner border surrounding the inner part
-for x in range(inner_x, inner_x + inner_d):
-	mymaze.set_border(x, 10)
-	mymaze.set_border(x, 20)
-for z in range(inner_z, inner_z + inner_d):
-	mymaze.set_border(10, z)
-	mymaze.set_border(20, z)
-```
-
 With that custom-shape of the maze, the final logical maze looks e.g. something like this:
 
 
@@ -309,18 +283,13 @@ B       #    #    #         #B
 BBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
 ```
 
+See also the example code in `examples`.
 
 
+### Examples
 
-## Installation
+The folder `examples` contains more examples on how to use the API.
 
-To install this tool clone the repository:
-
-```
-git clone https://github.com/alex4200/PyBlock.git
-cd PyBlock
-pip install .
-```
 
 
 
@@ -374,6 +343,17 @@ This tool is based on the package [anvil-parser](https://github.com/matcool/anvi
 
 ## Further information
 
-Last update was tested on Minecraft version **1.16.5** with python 3.8.7.
+### Links
+
+- [NBT format](https://github.com/twoolie/NBT)
+- [Region file format](https://minecraft.gamepedia.com/Region_file_format)
+- [Chunk format](https://minecraft.fandom.com/wiki/Chunk_format)
+- [Entity format](https://minecraft.fandom.com/wiki/Entity_format)
+- [Block entity format](https://minecraft.fandom.com/wiki/Chunk_format#Block_entity_format)
+
+
+### Compatibility
+
+Last update was tested on Minecraft version **1.18.2** with python 3.8.7.
 
 

@@ -1,168 +1,82 @@
+#!/usr/bin/env python3
+"""Defines a minecraft block."""
+__author__ = "Alexander Dietz"
+__license__ = "MIT"
+# pylint: disable=C0103,W1202,E1120,R0913,R0914,E0401,R0401
+
 from nbt import nbt
 from frozendict import frozendict
-from .legacy import LEGACY_ID_MAP
 
 
 class Block:
     """
     Represents a minecraft block.
 
-    Attributes
-    ----------
-    namespace: :class:`str`
-        Namespace of the block, most of the time this is ``minecraft``
-    id: :class:`str`
-        ID of the block, for example: stone, diamond_block, etc...
-    properties: :class:`dict`
-        Block properties as a dict
+    Attributes:
+    namespace (str) : Namespace of the block, normally this is `minecraft`
+    id (str): Name of the block, for example: `stone`, `diamond_block`, etc.
+    properties (dict): Optional Block properties as a dict
+    compound (nbt.TAG_Compound): The block as nbt compound tag
     """
-
-    __slots__ = ("namespace", "id", "properties")
 
     def __init__(
         self,
-        namespace: str,
-        block_id: str = None,
+        name: str = None,
         properties: dict = None,
-        states: dict = None,
+        compound: nbt.TAG_Compound = None,
+        namespace: str = "minecraft",
     ):
-        """
-        Parameters
-        ----------
-        namespace
-            Namespace of the block. If no block_id is given, assume this is ``block_id`` and set namespace to ``"minecraft"``
-        block_id
-            ID of the block
-        properties
-            Block properties
-        states
-            Block properties in simple form
-        """
-        # Transform block properties from a simple dict to a dict containing
-        # the weird NBT value TAG thingys.
-        if states:
-            properties = {k: nbt.TAG_String(v, k) for k, v in states.items()}
+        """Defines a block as NBT tag with its properties.
 
-        if block_id is None:
-            self.namespace = "minecraft"
-            self.id = namespace
+        Args:
+            name: Name of the block (or the ID)
+            properties: Block properties as dict
+            compound: NBT compound containing the block details
+            namespace: Namespace of the block. Default: `minecraft`
+        """
+        if properties is None:
+            properties = {}
+        if compound:
+            # Extracts name, stores compound
+            self.id = compound["Name"].value
+            self.compound = compound
+            self.properties = {}
+            if "Properties" in compound:
+                self.properties = {
+                    k: v.value for k, v in compound["Properties"].items()
+                }
         else:
-            self.namespace = namespace
-            self.id = block_id
-        self.properties = properties or {}
+            # Creates name, and compound
+            self.id = namespace + ":" + name
+            self.compound = nbt.TAG_Compound()
+            self.properties = {}
+            if properties:
+                # Transform block properties from a simple dict to the NBT dict
+                nbt_properties = nbt.TAG_Compound(name="Properties")
+                for prop_name, prop_value in properties.items():
+                    nbt_properties.tags.append(
+                        nbt.TAG_String(name=prop_name, value=prop_value)
+                    )
+                    self.properties[prop_name] = prop_value
+                self.compound.tags.append(nbt_properties)
+            self.compound.tags.append(nbt.TAG_String(name="Name", value=self.id))
 
     def name(self) -> str:
         """
-        Returns the block in the ``minecraft:block_id`` format
+        Returns the block name (or the ID) in the ``minecraft:block_id`` format
         """
-        return self.namespace + ":" + self.id
+        return self.id
 
     def __repr__(self):
-        return f"Block({self.name()})"
+        """Representation of this object."""
+        return f"Block({self.id} {self.properties})"
 
     def __eq__(self, other):
+        """Equality operator."""
         if not isinstance(other, Block):
             return False
-        return (
-            self.namespace == other.namespace
-            and self.id == other.id
-            and self.properties == other.properties
-        )
+
+        return self.id == other.id and self.properties == other.properties
 
     def __hash__(self):
         return hash(self.name()) ^ hash(frozendict(self.properties))
-
-    @classmethod
-    def from_name(cls, name: str, *args, **kwargs):
-        """
-        Creates a new Block from the format: ``namespace:block_id``
-
-        Parameters
-        ----------
-        name
-            Block in said format
-        , args, kwargs
-            Will be passed on to the main constructor
-        """
-        namespace, block_id = name.split(":")
-        return cls(namespace, block_id, *args, **kwargs)
-
-    @classmethod
-    def from_palette(cls, tag: nbt.TAG_Compound):
-        """
-        Creates a new Block from the tag format on Section.Palette
-
-        Parameters
-        ----------
-        tag
-            Raw tag from a section's palette
-        """
-        name = tag["Name"].value
-        properties = tag.get("Properties")
-        if properties:
-            properties = dict(properties)
-        return cls.from_name(name, properties=properties)
-
-    @classmethod
-    def from_numeric_id(cls, block_id: int, data: int = 0):
-        """
-        Creates a new Block from the block_id:data fromat used pre-flattening (pre-1.13)
-
-        Parameters
-        ----------
-        block_id
-            Numeric ID of the block
-        data
-            Numeric data, used to represent variants of the block
-        """
-        # See https://minecraft.gamepedia.com/Java_Edition_data_value/Pre-flattening
-        # and https://minecraft.gamepedia.com/Java_Edition_data_value for current values
-        key = f"{block_id}:{data}"
-        if key not in LEGACY_ID_MAP:
-            raise KeyError(f"Block {key} not found")
-        name, properties = LEGACY_ID_MAP[key]
-        return cls("minecraft", name, properties=properties)
-
-
-class OldBlock:
-    """
-    Represents a pre 1.13 minecraft block, with a numeric id.
-
-    Attributes
-    ----------
-    id: :class:`int`
-        Numeric ID of the block
-    data: :class:`int`
-        The block data, used to represent variants of the block
-    """
-
-    __slots__ = ("id", "data")
-
-    def __init__(self, block_id: int, data: int = 0):
-        """
-        Parameters
-        ----------
-        block_id
-            ID of the block
-        data
-            Block data
-        """
-        self.id = block_id
-        self.data = data
-
-    def convert(self) -> Block:
-        return Block.from_numeric_id(self.id, self.data)
-
-    def __repr__(self):
-        return f"OldBlock(id={self.id}, data={self.data})"
-
-    def __eq__(self, other):
-        if isinstance(other, int):
-            return self.id == other
-        elif not isinstance(other, Block):
-            return False
-        else:
-            return self.id == other.id and self.data == other.data
-
-    def __hash__(self):
-        return hash(self.id) ^ hash(self.data)
