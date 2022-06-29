@@ -2,9 +2,6 @@ from setuptools import setup, find_packages
 import os
 import re
 
-#requirements = [r.strip() for r in open('requirements.txt').readlines() if not r.startswith('--')]
-#requirements = [r if ('git+' not in r) else re.sub(r".*egg=(.*)", r"\1", r).strip() for r in requirements]
-
 setup(
     name='PyBlock',
     version=open('VERSION.txt').read().strip(),
