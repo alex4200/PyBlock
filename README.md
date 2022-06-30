@@ -5,16 +5,16 @@ This package helps to explore and examine your minecraft world. Find special blo
 
 - [Installation](#installation) — Install instructions
 - [Usage](#usage) - Usage examples
- - [Listing all blocks](#listing-all-blocks) - How to list all blocks in an area
- - [Finding blocks](#finding-blocks) - Finding the locations of a specic block in an area
- - [Map Creation](#map-creation) - Create maps for each y level.
- - [Chest investigation](#chest-investigation) - Find chests and list their contents
- - [Copying blocks](#copying-blocks) - Copying areas of blocks at other locations
- - [Block Walker](#block-walker) - Walks you to the nearest location of a specific block
- - [Surface image creation](#surface-image-creation) - Creates a surface showing an image
+  - [Listing all blocks](#listing-all-blocks) - How to list all blocks in an area
+  - [Finding blocks](#finding-blocks) - Finding the locations of a specic block in an area
+  - [Map Creation](#map-creation) - Create maps for each y level.
+  - [Chest investigation](#chest-investigation) - Find chests and list their contents
+  - [Copying blocks](#copying-blocks) - Copying areas of blocks at other locations
+  - [Block Walker](#block-walker) - Walks you to the nearest location of a specific block
+  - [Surface image creation](#surface-image-creation) - Creates a surface showing an image
 - [Python API](#python-api) - Examples on how to use the API to edit your minecraft world in python
 - [Details](#details) Some details on the internals of how minecraft organizes the blocks (regions, chunks and sections)
-- [Acknowledgment](#acknowledgement) - Acknowledgements
+- [Acknowledgment](#acknowledgment) - Acknowledgements
 - [Further Information](#further-information) - Links to further resources
 
 
@@ -354,6 +354,6 @@ This tool is based on the package [anvil-parser](https://github.com/matcool/anvi
 
 ### Compatibility
 
-Last update was tested on Minecraft version **1.18.2** with python 3.8.7.
+Last update was tested on Minecraft version **1.18.2** and **1.19** with python 3.8.7.
 
 
