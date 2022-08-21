@@ -67,6 +67,7 @@ minecraft:emerald_ore
 minecraft:end_stone
 minecraft:farmland
 minecraft:fire_coral_block
+minecraft:froglight
 minecraft:gilded_blackstone
 minecraft:gold_block
 minecraft:gold_ore
@@ -115,9 +116,16 @@ minecraft:magenta_glazed_terracotta
 minecraft:magenta_terracotta
 minecraft:magenta_wool
 minecraft:magma_block
+minecraft:mangrove_leaves
+minecraft:mangrove_log
+minecraft:mangrove_planks
+minecraft:mangrove_stairs
+minecraft:mangrove_wood
 minecraft:melon
 minecraft:mossy_cobblestone
 minecraft:mossy_stone_bricks
+minecraft:mud
+minecraft:mud_brick_slab
 minecraft:nether_brick
 minecraft:nether_gold_ore
 minecraft:nether_quartz_ore
@@ -134,6 +142,7 @@ minecraft:orange_glazed_terracotta
 minecraft:orange_terracotta
 minecraft:orange_wool
 minecraft:packed_ice
+minecraft:packed_mud
 minecraft:pink_concrete
 minecraft:pink_concrete_powder
 minecraft:pink_glazed_terracotta
@@ -163,8 +172,13 @@ minecraft:red_terracotta
 minecraft:red_wool
 minecraft:redstone_block
 minecraft:redstone_ore
+minecraft:reinforced_deepslate
 minecraft:sand
 minecraft:sandstone
+minecraft:sculk
+minecraft:sculk_catalyst
+minecraft:sculk_sensor
+minecraft:sculk_shrieker
 minecraft:smooth_red_sandstone
 minecraft:smooth_sandstone
 minecraft:smooth_stone
