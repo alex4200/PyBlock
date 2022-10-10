@@ -135,6 +135,7 @@ minecraft:netherrack
 minecraft:oak_log
 minecraft:oak_planks
 minecraft:oak_wood
+minecraft:ochre_froglight
 minecraft:obsidian
 minecraft:orange_concrete
 minecraft:orange_concrete_powder
@@ -143,6 +144,7 @@ minecraft:orange_terracotta
 minecraft:orange_wool
 minecraft:packed_ice
 minecraft:packed_mud
+minecraft:pearlescent_froglight
 minecraft:pink_concrete
 minecraft:pink_concrete_powder
 minecraft:pink_glazed_terracotta
@@ -206,6 +208,7 @@ minecraft:stripped_warped_stem
 minecraft:terracotta
 minecraft:tnt
 minecraft:tube_coral_block
+minecraft:verdant_froglight
 minecraft:white_concrete
 minecraft:white_concrete_powder
 minecraft:white_glazed_terracotta
